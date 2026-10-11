@@ -1,4 +1,8 @@
--- Run this in the Supabase SQL editor once per project.
+-- Run this in the Supabase SQL editor. Idempotent — safe to re-run.
+
+-- ============================================================
+-- Tables
+-- ============================================================
 
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -18,9 +22,12 @@ create table if not exists bookings (
   jitsi_room text unique not null,
   status text not null default 'confirmed' check (status in ('confirmed','completed','cancelled')),
   notes text,
-  slot_id uuid,
   created_at timestamptz default now()
 );
+
+-- Older bookings tables were created without slot_id; add it defensively
+-- BEFORE any FK constraint references it.
+alter table bookings add column if not exists slot_id uuid;
 
 create table if not exists availability_slots (
   id uuid primary key default gen_random_uuid(),
@@ -31,10 +38,10 @@ create table if not exists availability_slots (
   created_at timestamptz default now()
 );
 
-alter table bookings
-  drop constraint if exists bookings_slot_fk,
-  add constraint bookings_slot_fk foreign key (slot_id)
-    references availability_slots(id) on delete set null;
+-- Now that both the column and the referenced table exist, add the FK.
+alter table bookings drop constraint if exists bookings_slot_fk;
+alter table bookings add constraint bookings_slot_fk
+  foreign key (slot_id) references availability_slots(id) on delete set null;
 
 create table if not exists reviews (
   id uuid primary key default gen_random_uuid(),
@@ -45,6 +52,23 @@ create table if not exists reviews (
   comment text,
   created_at timestamptz default now()
 );
+
+create table if not exists messages (
+  id uuid primary key default gen_random_uuid(),
+  seeker_id uuid not null references profiles(id) on delete cascade,
+  mentor_id uuid not null references profiles(id) on delete cascade,
+  sender_id uuid not null references profiles(id) on delete cascade,
+  body text not null check (length(body) between 1 and 4000),
+  created_at timestamptz default now()
+);
+
+create index if not exists messages_pair_time_idx
+  on messages (seeker_id, mentor_id, created_at desc);
+
+-- ============================================================
+-- Auto-create a profile row when a new auth.users row appears.
+-- security definer + empty search_path requires fully-qualified tables.
+-- ============================================================
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -67,12 +91,17 @@ $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
-  for each row execute function handle_new_user();
+  for each row execute function public.handle_new_user();
+
+-- ============================================================
+-- Row-level security
+-- ============================================================
 
 alter table profiles enable row level security;
 alter table bookings enable row level security;
 alter table availability_slots enable row level security;
 alter table reviews enable row level security;
+alter table messages enable row level security;
 
 drop policy if exists "profiles readable" on profiles;
 drop policy if exists "update own profile" on profiles;
@@ -86,6 +115,8 @@ drop policy if exists "mentor deletes own slot" on availability_slots;
 drop policy if exists "slot booked by seeker" on availability_slots;
 drop policy if exists "reviews readable" on reviews;
 drop policy if exists "seeker writes own review" on reviews;
+drop policy if exists "view own messages" on messages;
+drop policy if exists "send own messages" on messages;
 
 create policy "profiles readable" on profiles for select using (true);
 create policy "update own profile" on profiles for update using (auth.uid() = id);
@@ -109,3 +140,25 @@ create policy "mentor deletes own slot" on availability_slots for delete
 create policy "reviews readable" on reviews for select using (true);
 create policy "seeker writes own review" on reviews for insert
   with check (seeker_id = auth.uid());
+
+create policy "view own messages" on messages for select using (
+  seeker_id = auth.uid() or mentor_id = auth.uid()
+);
+create policy "send own messages" on messages for insert with check (
+  sender_id = auth.uid()
+  and (seeker_id = auth.uid() or mentor_id = auth.uid())
+);
+
+-- ============================================================
+-- Enable realtime on messages (idempotent).
+-- ============================================================
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'messages'
+  ) then
+    execute 'alter publication supabase_realtime add table public.messages';
+  end if;
+end $$;
