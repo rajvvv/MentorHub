@@ -101,12 +101,19 @@ function LoginForm() {
           {loading ? '...' : mode === 'login' ? 'Log in' : 'Sign up'}
         </button>
       </form>
-      <button
-        onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-        className="mt-4 text-sm underline"
-      >
-        {mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Log in'}
-      </button>
+      <div className="mt-4 flex justify-between text-sm">
+        <button
+          onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+          className="underline"
+        >
+          {mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Log in'}
+        </button>
+        {mode === 'login' && (
+          <a href="/forgot-password" className="underline text-gray-600">
+            Forgot password?
+          </a>
+        )}
+      </div>
     </div>
   )
 }

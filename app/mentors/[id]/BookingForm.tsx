@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useToast } from '../../components/Toast'
 
 type Slot = { id: string; starts_at: string; duration_min: number }
 
@@ -14,6 +15,7 @@ export default function BookingForm({
   slots: Slot[]
 }) {
   const router = useRouter()
+  const toast = useToast()
   const [slotId, setSlotId] = useState(slots[0]?.id ?? '')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
@@ -72,9 +74,12 @@ export default function BookingForm({
         throw new Error('That slot was just taken — pick another.')
       }
 
+      toast.show('Session booked!', 'success')
       router.push('/dashboard')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to book')
+      const m = err instanceof Error ? err.message : 'Failed to book'
+      setError(m)
+      toast.show(m, 'error')
     } finally {
       setLoading(false)
     }

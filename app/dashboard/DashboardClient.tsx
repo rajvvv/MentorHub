@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { downloadIcs } from '@/lib/ics'
 import ReviewForm from './ReviewForm'
+import { useToast } from '../components/Toast'
 
 type Booking = {
   id: string
@@ -20,6 +22,7 @@ type Booking = {
 
 export default function DashboardClient() {
   const router = useRouter()
+  const toast = useToast()
   const [userId, setUserId] = useState<string | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [reviewed, setReviewed] = useState<Set<string>>(new Set())
@@ -61,12 +64,21 @@ export default function DashboardClient() {
   }, [])
 
   async function cancel(id: string) {
-    await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', id)
+    if (!confirm('Cancel this booking?')) return
+    const { error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', id)
+    toast.show(error ? error.message : 'Booking cancelled', error ? 'error' : 'success')
     load()
   }
 
   async function complete(id: string) {
-    await supabase.from('bookings').update({ status: 'completed' }).eq('id', id)
+    const { error } = await supabase
+      .from('bookings')
+      .update({ status: 'completed' })
+      .eq('id', id)
+    toast.show(error ? error.message : 'Marked completed', error ? 'error' : 'success')
     load()
   }
 
@@ -133,6 +145,24 @@ export default function DashboardClient() {
                         >
                           Join call
                         </Link>
+                        <button
+                          onClick={() =>
+                            downloadIcs({
+                              id: b.id,
+                              title: `MentorHub: ${other ?? 'Session'}`,
+                              description: b.notes ?? '',
+                              startISO: b.scheduled_at,
+                              durationMin: 30,
+                              url:
+                                typeof window !== 'undefined'
+                                  ? `${window.location.origin}/call/${b.id}`
+                                  : undefined,
+                            })
+                          }
+                          className="border px-3 py-1 rounded text-sm"
+                        >
+                          Add to calendar
+                        </button>
                         {tab === 'mentor' && isPast && (
                           <button
                             onClick={() => complete(b.id)}

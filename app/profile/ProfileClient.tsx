@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AvailabilityManager from './AvailabilityManager'
+import { useToast } from '../components/Toast'
 
 export default function ProfileClient() {
   const router = useRouter()
+  const toast = useToast()
   const [userId, setUserId] = useState<string | null>(null)
   const [fullName, setFullName] = useState('')
   const [bio, setBio] = useState('')
@@ -59,6 +61,7 @@ export default function ProfileClient() {
       .eq('id', user.id)
     setSaving(false)
     setMsg(error ? error.message : 'Saved!')
+    toast.show(error ? error.message : 'Profile saved', error ? 'error' : 'success')
   }
 
   if (loading) return <div className="p-8">Loading…</div>
