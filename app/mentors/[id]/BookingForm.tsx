@@ -10,12 +10,17 @@ type Slot = { id: string; starts_at: string; duration_min: number }
 export default function BookingForm({
   mentorId,
   slots,
+  serviceId,
+  serviceTitle,
 }: {
   mentorId: string
   slots: Slot[]
+  serviceId?: string
+  serviceTitle?: string
 }) {
   const router = useRouter()
   const toast = useToast()
+  const [open, setOpen] = useState(false)
   const [slotId, setSlotId] = useState(slots[0]?.id ?? '')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
@@ -23,9 +28,20 @@ export default function BookingForm({
 
   if (slots.length === 0) {
     return (
-      <p className="text-sm text-gray-600">
-        This mentor has no open slots right now. Check back later.
+      <p className="text-sm text-gray-500">
+        No open slots right now. Message the advisor to request a time.
       </p>
+    )
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="bg-black text-white px-4 py-2 rounded text-sm"
+      >
+        Book this
+      </button>
     )
   }
 
@@ -41,9 +57,8 @@ export default function BookingForm({
         router.push('/login')
         return
       }
-      if (user.id === mentorId) {
-        throw new Error("You can't book yourself.")
-      }
+      if (user.id === mentorId) throw new Error("You can't book yourself.")
+
       const slot = slots.find((s) => s.id === slotId)
       if (!slot) throw new Error('Pick a slot.')
 
@@ -56,13 +71,14 @@ export default function BookingForm({
           scheduled_at: slot.starts_at,
           jitsi_room: jitsiRoom,
           slot_id: slot.id,
-          notes,
+          service_id: serviceId ?? null,
+          notes: serviceTitle ? `[${serviceTitle}] ${notes}`.trim() : notes,
         })
         .select('id')
         .single()
       if (bErr || !booking) throw bErr ?? new Error('Could not book')
 
-      const { error: sErr, data: claimed } = await supabase
+      const { data: claimed, error: sErr } = await supabase
         .from('availability_slots')
         .update({ booking_id: booking.id })
         .eq('id', slot.id)
@@ -86,19 +102,22 @@ export default function BookingForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <select
-        value={slotId}
-        onChange={(e) => setSlotId(e.target.value)}
-        className="w-full border p-2 rounded"
-        required
-      >
-        {slots.map((s) => (
-          <option key={s.id} value={s.id}>
-            {new Date(s.starts_at).toLocaleString()} · {s.duration_min}min
-          </option>
-        ))}
-      </select>
+    <form onSubmit={submit} className="space-y-3 border-t pt-3">
+      <label className="block text-sm">
+        Pick a slot
+        <select
+          value={slotId}
+          onChange={(e) => setSlotId(e.target.value)}
+          className="block w-full border p-2 rounded mt-1"
+          required
+        >
+          {slots.map((s) => (
+            <option key={s.id} value={s.id}>
+              {new Date(s.starts_at).toLocaleString()} · {s.duration_min}min
+            </option>
+          ))}
+        </select>
+      </label>
       <textarea
         className="w-full border p-2 rounded"
         placeholder="What do you want to discuss?"
@@ -107,13 +126,22 @@ export default function BookingForm({
         onChange={(e) => setNotes(e.target.value)}
       />
       {error && <p className="text-red-600 text-sm">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
-      >
-        {loading ? 'Booking…' : 'Book session'}
-      </button>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
+        >
+          {loading ? 'Booking…' : 'Confirm booking'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="border px-4 py-2 rounded"
+        >
+          Cancel
+        </button>
+      </div>
     </form>
   )
 }

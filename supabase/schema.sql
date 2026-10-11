@@ -53,6 +53,54 @@ create table if not exists reviews (
   created_at timestamptz default now()
 );
 
+create table if not exists categories (
+  slug text primary key,
+  name text not null,
+  icon text,
+  sort_order int default 0
+);
+
+insert into categories (slug, name, icon, sort_order) values
+  ('career',        'Career & Jobs',       '💼', 10),
+  ('coding',        'Programming',         '💻', 20),
+  ('design',        'Design & Creative',   '🎨', 30),
+  ('business',      'Business & Startup',  '📈', 40),
+  ('marketing',     'Marketing & Sales',   '📣', 50),
+  ('finance',       'Finance & Investing', '💰', 60),
+  ('education',     'Education & Tutoring','📚', 70),
+  ('health',        'Health & Wellness',   '🧘', 80),
+  ('relationships', 'Life & Relationships','❤️', 90),
+  ('language',      'Languages',           '🌍', 100),
+  ('other',         'Other',               '✨', 999)
+on conflict (slug) do nothing;
+
+create table if not exists services (
+  id uuid primary key default gen_random_uuid(),
+  mentor_id uuid not null references profiles(id) on delete cascade,
+  category_slug text not null references categories(slug),
+  title text not null check (length(title) between 3 and 120),
+  description text,
+  duration_min int not null default 30 check (duration_min between 15 and 240),
+  is_active boolean not null default true,
+  created_at timestamptz default now()
+);
+
+create index if not exists services_mentor_idx on services (mentor_id);
+create index if not exists services_active_cat_idx
+  on services (category_slug) where is_active;
+
+alter table bookings add column if not exists service_id uuid;
+alter table bookings drop constraint if exists bookings_service_fk;
+alter table bookings add constraint bookings_service_fk
+  foreign key (service_id) references services(id) on delete set null;
+
+create table if not exists favorites (
+  seeker_id uuid not null references profiles(id) on delete cascade,
+  mentor_id uuid not null references profiles(id) on delete cascade,
+  created_at timestamptz default now(),
+  primary key (seeker_id, mentor_id)
+);
+
 create table if not exists messages (
   id uuid primary key default gen_random_uuid(),
   seeker_id uuid not null references profiles(id) on delete cascade,
@@ -102,6 +150,9 @@ alter table bookings enable row level security;
 alter table availability_slots enable row level security;
 alter table reviews enable row level security;
 alter table messages enable row level security;
+alter table categories enable row level security;
+alter table services enable row level security;
+alter table favorites enable row level security;
 
 drop policy if exists "profiles readable" on profiles;
 drop policy if exists "update own profile" on profiles;
@@ -117,6 +168,14 @@ drop policy if exists "reviews readable" on reviews;
 drop policy if exists "seeker writes own review" on reviews;
 drop policy if exists "view own messages" on messages;
 drop policy if exists "send own messages" on messages;
+drop policy if exists "categories readable" on categories;
+drop policy if exists "services readable" on services;
+drop policy if exists "mentor manages own services" on services;
+drop policy if exists "mentor updates own service" on services;
+drop policy if exists "mentor deletes own service" on services;
+drop policy if exists "favorites readable to owner" on favorites;
+drop policy if exists "insert own favorite" on favorites;
+drop policy if exists "delete own favorite" on favorites;
 
 create policy "profiles readable" on profiles for select using (true);
 create policy "update own profile" on profiles for update using (auth.uid() = id);
@@ -148,6 +207,23 @@ create policy "send own messages" on messages for insert with check (
   sender_id = auth.uid()
   and (seeker_id = auth.uid() or mentor_id = auth.uid())
 );
+
+create policy "categories readable" on categories for select using (true);
+
+create policy "services readable" on services for select using (true);
+create policy "mentor manages own services" on services for insert
+  with check (mentor_id = auth.uid());
+create policy "mentor updates own service" on services for update
+  using (mentor_id = auth.uid());
+create policy "mentor deletes own service" on services for delete
+  using (mentor_id = auth.uid());
+
+create policy "favorites readable to owner" on favorites for select
+  using (seeker_id = auth.uid());
+create policy "insert own favorite" on favorites for insert
+  with check (seeker_id = auth.uid());
+create policy "delete own favorite" on favorites for delete
+  using (seeker_id = auth.uid());
 
 -- ============================================================
 -- Enable realtime on messages (idempotent).

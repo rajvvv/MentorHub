@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const protectedPaths = ['/dashboard', '/call', '/profile', '/messages']
+  const protectedPaths = ['/dashboard', '/call', '/profile', '/messages', '/favorites']
   if (!user && protectedPaths.some((p) => request.nextUrl.pathname.startsWith(p))) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
@@ -33,5 +33,6 @@ export const config = {
     '/call/:path*',
     '/profile/:path*',
     '/messages/:path*',
+    '/favorites/:path*',
   ],
 }

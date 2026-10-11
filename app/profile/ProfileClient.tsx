@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AvailabilityManager from './AvailabilityManager'
+import ServicesManager from './ServicesManager'
 import { useToast } from '../components/Toast'
 
 export default function ProfileClient() {
@@ -107,7 +108,12 @@ export default function ProfileClient() {
         </button>
         {msg && <p className="text-sm">{msg}</p>}
       </form>
-      {role === 'mentor' && userId && <AvailabilityManager mentorId={userId} />}
+      {role === 'mentor' && userId && (
+        <>
+          <ServicesManager mentorId={userId} />
+          <AvailabilityManager mentorId={userId} />
+        </>
+      )}
     </div>
   )
 }

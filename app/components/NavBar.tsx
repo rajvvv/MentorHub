@@ -94,8 +94,13 @@ export default function NavBar() {
         </Link>
         <div className="flex items-center gap-3 text-sm">
           <Link href="/mentors" className="hover:underline">
-            Mentors
+            Advisors
           </Link>
+          {loggedIn && (
+            <Link href="/favorites" className="hover:underline">
+              Saved
+            </Link>
+          )}
           {loggedIn ? (
             <>
               <Link href="/dashboard" className="hover:underline">
