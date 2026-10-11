@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import RequestCallButton from '../../components/RequestCallButton'
 
 type Msg = {
   id: string
@@ -126,13 +127,20 @@ export default function ThreadClient() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 flex flex-col h-[calc(100vh-56px)]">
-      <div className="flex items-center justify-between pb-3 border-b">
+      <div className="flex items-center justify-between pb-3 border-b gap-3">
         <div>
           <Link href="/messages" className="text-sm underline">
             ← All messages
           </Link>
           <h1 className="text-xl font-bold">{otherName}</h1>
         </div>
+        {me?.role === 'seeker' && (
+          <RequestCallButton
+            mentorId={otherId}
+            label="📞 Call now"
+            className="bg-green-600 text-white px-3 py-1.5 rounded text-sm"
+          />
+        )}
       </div>
 
       <div

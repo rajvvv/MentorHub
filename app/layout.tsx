@@ -4,6 +4,7 @@ import "./globals.css";
 import { Suspense } from "react";
 import NavBar from "./components/NavBar";
 import { ToastProvider } from "./components/Toast";
+import CallRequestLayer from "./components/CallRequestLayer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <NavBar />
           </Suspense>
           <main className="flex-1">{children}</main>
+          <Suspense fallback={null}>
+            <CallRequestLayer />
+          </Suspense>
         </ToastProvider>
       </body>
     </html>

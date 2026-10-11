@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import BookingForm from './BookingForm'
 import ReviewList from './ReviewList'
 import FavoriteButton from './FavoriteButton'
+import RequestCallButton from '../../components/RequestCallButton'
 
 export const instant = false
 
@@ -87,6 +88,7 @@ export default async function MentorProfile({
       </div>
 
       <div className="mt-5 flex gap-2 flex-wrap">
+        <RequestCallButton mentorId={mentor.id} />
         <Link
           href={`/messages/${mentor.id}`}
           className="border px-4 py-2 rounded text-sm"

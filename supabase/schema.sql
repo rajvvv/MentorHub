@@ -101,6 +101,23 @@ create table if not exists favorites (
   primary key (seeker_id, mentor_id)
 );
 
+create table if not exists call_requests (
+  id uuid primary key default gen_random_uuid(),
+  seeker_id uuid not null references profiles(id) on delete cascade,
+  mentor_id uuid not null references profiles(id) on delete cascade,
+  status text not null default 'pending'
+    check (status in ('pending','accepted','declined','cancelled','expired')),
+  jitsi_room text,
+  message text,
+  created_at timestamptz default now(),
+  responded_at timestamptz
+);
+
+create index if not exists call_requests_mentor_pending_idx
+  on call_requests (mentor_id, created_at desc) where status = 'pending';
+create index if not exists call_requests_seeker_pending_idx
+  on call_requests (seeker_id, created_at desc) where status = 'pending';
+
 create table if not exists messages (
   id uuid primary key default gen_random_uuid(),
   seeker_id uuid not null references profiles(id) on delete cascade,
@@ -153,6 +170,7 @@ alter table messages enable row level security;
 alter table categories enable row level security;
 alter table services enable row level security;
 alter table favorites enable row level security;
+alter table call_requests enable row level security;
 
 drop policy if exists "profiles readable" on profiles;
 drop policy if exists "update own profile" on profiles;
@@ -176,6 +194,9 @@ drop policy if exists "mentor deletes own service" on services;
 drop policy if exists "favorites readable to owner" on favorites;
 drop policy if exists "insert own favorite" on favorites;
 drop policy if exists "delete own favorite" on favorites;
+drop policy if exists "view own call requests" on call_requests;
+drop policy if exists "seeker creates call request" on call_requests;
+drop policy if exists "parties update call request" on call_requests;
 
 create policy "profiles readable" on profiles for select using (true);
 create policy "update own profile" on profiles for update using (auth.uid() = id);
@@ -225,6 +246,15 @@ create policy "insert own favorite" on favorites for insert
 create policy "delete own favorite" on favorites for delete
   using (seeker_id = auth.uid());
 
+create policy "view own call requests" on call_requests for select using (
+  seeker_id = auth.uid() or mentor_id = auth.uid()
+);
+create policy "seeker creates call request" on call_requests for insert
+  with check (seeker_id = auth.uid());
+create policy "parties update call request" on call_requests for update using (
+  seeker_id = auth.uid() or mentor_id = auth.uid()
+);
+
 -- ============================================================
 -- Enable realtime on messages (idempotent).
 -- ============================================================
@@ -236,5 +266,11 @@ begin
     where pubname = 'supabase_realtime' and tablename = 'messages'
   ) then
     execute 'alter publication supabase_realtime add table public.messages';
+  end if;
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'call_requests'
+  ) then
+    execute 'alter publication supabase_realtime add table public.call_requests';
   end if;
 end $$;
