@@ -45,7 +45,7 @@ export default function NavBar() {
     refresh()
 
     channel = supabase
-      .channel(`nav-unread-${userId}`)
+      .channel(`nav-unread-${userId}-${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },

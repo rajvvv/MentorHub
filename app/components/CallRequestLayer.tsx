@@ -80,7 +80,7 @@ export default function CallRequestLayer() {
     }
 
     channel = supabase
-      .channel(`cr-${userId}`)
+      .channel(`cr-${userId}-${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'call_requests' },

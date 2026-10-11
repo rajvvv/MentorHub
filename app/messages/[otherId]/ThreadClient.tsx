@@ -74,7 +74,7 @@ export default function ThreadClient() {
       setLoading(false)
 
       channel = supabase
-        .channel(`msgs-${seekerId}-${mentorId}`)
+        .channel(`msgs-${seekerId}-${mentorId}-${crypto.randomUUID()}`)
         .on(
           'postgres_changes',
           {
