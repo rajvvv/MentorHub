@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import AvailabilityManager from './AvailabilityManager'
 
 export default function ProfileClient() {
   const router = useRouter()
+  const [userId, setUserId] = useState<string | null>(null)
   const [fullName, setFullName] = useState('')
   const [bio, setBio] = useState('')
   const [topics, setTopics] = useState('')
@@ -23,6 +25,7 @@ export default function ProfileClient() {
         router.push('/login')
         return
       }
+      setUserId(user.id)
       const { data } = await supabase
         .from('profiles')
         .select('*')
@@ -101,6 +104,7 @@ export default function ProfileClient() {
         </button>
         {msg && <p className="text-sm">{msg}</p>}
       </form>
+      {role === 'mentor' && userId && <AvailabilityManager mentorId={userId} />}
     </div>
   )
 }
