@@ -15,25 +15,26 @@ function LoginForm() {
   const [fullName, setFullName] = useState('')
   const [role, setRole] = useState<'seeker' | 'mentor'>(defaultRole)
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setInfo('')
     setLoading(true)
     try {
       if (mode === 'signup') {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName } },
+          options: { data: { full_name: fullName, role } },
         })
         if (error) throw error
-        if (data.user) {
-          await supabase
-            .from('profiles')
-            .update({ full_name: fullName, role })
-            .eq('id', data.user.id)
+        if (!data.session) {
+          setInfo('Check your email to confirm your account, then log in.')
+          setMode('login')
+          return
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -91,6 +92,7 @@ function LoginForm() {
           minLength={6}
         />
         {error && <p className="text-red-600 text-sm">{error}</p>}
+        {info && <p className="text-green-700 text-sm">{info}</p>}
         <button
           type="submit"
           disabled={loading}

@@ -21,11 +21,20 @@ create table if not exists bookings (
   created_at timestamptz default now()
 );
 
-create or replace function handle_new_user()
-returns trigger language plpgsql security definer as $$
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
 begin
-  insert into profiles (id, email, full_name)
-  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'full_name','User'));
+  insert into public.profiles (id, email, full_name, role)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'full_name', 'User'),
+    coalesce(new.raw_user_meta_data->>'role', 'seeker')
+  );
   return new;
 end;
 $$;
