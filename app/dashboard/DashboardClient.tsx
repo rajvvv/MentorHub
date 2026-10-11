@@ -117,6 +117,14 @@ export default function DashboardClient() {
                     )}
                   </div>
                   <div className="flex gap-2 flex-wrap">
+                    <Link
+                      href={`/messages/${
+                        tab === 'seeker' ? b.mentor_id : b.seeker_id
+                      }`}
+                      className="border px-3 py-1 rounded text-sm"
+                    >
+                      Message
+                    </Link>
                     {b.status === 'confirmed' && (
                       <>
                         <Link

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import BookingForm from './BookingForm'
@@ -50,6 +51,14 @@ export default async function MentorProfile({
           ))}
         </div>
       )}
+      <div className="mt-6">
+        <Link
+          href={`/messages/${mentor.id}`}
+          className="inline-block border px-4 py-2 rounded text-sm"
+        >
+          Message {mentor.full_name.split(' ')[0]}
+        </Link>
+      </div>
       <div className="mt-8 border-t pt-6">
         <h2 className="text-xl font-semibold mb-3">Book a session</h2>
         <BookingForm mentorId={mentor.id} slots={(slots ?? []) as Slot[]} />
