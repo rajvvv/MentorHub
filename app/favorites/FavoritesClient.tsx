@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { Avatar, Card, Container, Empty } from '../components/ui'
 
 type Mentor = {
   id: string
@@ -45,31 +46,51 @@ export default function FavoritesClient() {
     })()
   }, [router])
 
-  if (loading) return <div className="p-8">Loading…</div>
+  if (loading) return <Container className="py-10">Loading…</Container>
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-4">Saved advisors</h1>
+    <Container className="py-10">
+      <h1 className="text-3xl font-bold tracking-tight">Saved advisors</h1>
+      <p className="text-[color:var(--muted)] mt-1 mb-6">
+        Your shortlist. Nothing shared.
+      </p>
       {mentors.length === 0 ? (
-        <p className="text-gray-600">
-          No favorites yet. Tap &ldquo;♡ Save&rdquo; on any advisor&apos;s profile.
-        </p>
+        <Empty
+          icon="♡"
+          title="No favorites yet"
+          body='Tap "♡ Save" on any advisor&apos;s profile.'
+          action={
+            <Link
+              href="/mentors"
+              className="inline-flex items-center bg-[color:var(--brand)] text-white rounded-xl px-4 py-2 text-sm font-semibold hover:brightness-110"
+            >
+              Browse advisors
+            </Link>
+          }
+        />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {mentors.map((m) => (
-            <li key={m.id} className="border rounded-lg p-4">
-              <h2 className="text-lg font-semibold">{m.full_name}</h2>
-              {m.bio && <p className="text-sm text-gray-700 mt-1">{m.bio}</p>}
-              <Link
-                href={`/mentors/${m.id}`}
-                className="inline-block mt-2 text-sm underline"
-              >
-                View &amp; book →
+            <li key={m.id}>
+              <Link href={`/mentors/${m.id}`}>
+                <Card hover className="h-full">
+                  <div className="flex items-start gap-3">
+                    <Avatar name={m.full_name} id={m.id} size={44} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold truncate">{m.full_name}</p>
+                      {m.bio && (
+                        <p className="text-sm text-[color:var(--muted)] mt-1 line-clamp-2">
+                          {m.bio}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Card>
               </Link>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </Container>
   )
 }

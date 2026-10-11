@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '../components/Toast'
+import { Card } from '../components/ui'
 
 type Category = { slug: string; name: string; icon: string | null }
 type Service = {
@@ -99,12 +100,17 @@ export default function ServicesManager({ mentorId }: { mentorId: string }) {
     load()
   }
 
-  if (loading) return <p className="text-sm text-gray-500 mt-6">Loading services…</p>
+  if (loading)
+    return (
+      <Card>
+        <p className="text-sm text-[color:var(--muted)]">Loading services…</p>
+      </Card>
+    )
 
   return (
-    <div className="mt-10 border-t pt-6">
-      <h2 className="text-xl font-semibold mb-3">My services</h2>
-      <p className="text-sm text-gray-600 mb-4">
+    <Card>
+      <h2 className="text-lg font-bold">My services</h2>
+      <p className="text-sm text-[color:var(--muted)] mt-1 mb-4">
         Package what you offer: a title, duration, and short pitch. Seekers book these directly.
       </p>
 
@@ -224,6 +230,6 @@ export default function ServicesManager({ mentorId }: { mentorId: string }) {
           })}
         </ul>
       )}
-    </div>
+    </Card>
   )
 }

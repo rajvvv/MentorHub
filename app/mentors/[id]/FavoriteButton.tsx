@@ -56,13 +56,14 @@ export default function FavoriteButton({ mentorId }: { mentorId: string }) {
     <button
       onClick={toggle}
       aria-label={fav ? 'Remove favorite' : 'Save as favorite'}
-      className={`border rounded-full px-3 py-1.5 text-sm transition ${
+      className={`border rounded-xl px-4 py-2 text-sm font-medium transition inline-flex items-center gap-1.5 ${
         fav
-          ? 'bg-red-50 border-red-300 text-red-700'
-          : 'hover:bg-gray-50'
+          ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950 dark:border-red-900 dark:text-red-200'
+          : 'bg-[color:var(--surface)] hover:bg-[color:var(--surface-2)]'
       }`}
     >
-      {fav ? '♥ Saved' : '♡ Save'}
+      <span className={fav ? 'text-red-600' : ''}>{fav ? '♥' : '♡'}</span>
+      {fav ? 'Saved' : 'Save'}
     </button>
   )
 }

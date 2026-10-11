@@ -7,17 +7,24 @@ import { supabase } from '@/lib/supabase'
 import { downloadIcs } from '@/lib/ics'
 import ReviewForm from './ReviewForm'
 import { useToast } from '../components/Toast'
+import { Avatar, Badge, Card, Container, Empty } from '../components/ui'
 
 type Booking = {
   id: string
   seeker_id: string
   mentor_id: string
   scheduled_at: string
-  status: string
+  status: 'confirmed' | 'completed' | 'cancelled'
   notes: string | null
   jitsi_room: string
   seeker: { full_name: string } | null
   mentor: { full_name: string } | null
+}
+
+const STATUS_TONE: Record<string, 'success' | 'brand' | 'danger' | 'neutral'> = {
+  confirmed: 'brand',
+  completed: 'success',
+  cancelled: 'danger',
 }
 
 export default function DashboardClient() {
@@ -46,7 +53,6 @@ export default function DashboardClient() {
       .order('scheduled_at', { ascending: false })
     const bs = (data ?? []) as unknown as Booking[]
     setBookings(bs)
-
     const ids = bs.map((b) => b.id)
     if (ids.length > 0) {
       const { data: revs } = await supabase
@@ -82,140 +88,206 @@ export default function DashboardClient() {
     load()
   }
 
-  if (loading) return <div className="p-8">Loading…</div>
+  if (loading) {
+    return (
+      <Container className="py-10">
+        <p className="text-[color:var(--muted)]">Loading…</p>
+      </Container>
+    )
+  }
 
   const asSeeker = bookings.filter((b) => b.seeker_id === userId)
   const asMentor = bookings.filter((b) => b.mentor_id === userId)
   const current = tab === 'seeker' ? asSeeker : asMentor
 
+  const upcoming = current.filter(
+    (b) => b.status === 'confirmed' && new Date(b.scheduled_at) >= new Date()
+  ).length
+
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
-      <div className="flex gap-2 border-b mb-4">
-        <button
-          onClick={() => setTab('seeker')}
-          className={`px-4 py-2 ${tab === 'seeker' ? 'border-b-2 border-black font-semibold' : ''}`}
-        >
-          As Seeker ({asSeeker.length})
-        </button>
-        <button
-          onClick={() => setTab('mentor')}
-          className={`px-4 py-2 ${tab === 'mentor' ? 'border-b-2 border-black font-semibold' : ''}`}
-        >
-          As Mentor ({asMentor.length})
-        </button>
+    <Container className="py-10">
+      <div className="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-[color:var(--muted)] mt-1">
+            {upcoming === 0
+              ? 'Nothing on the calendar yet.'
+              : `${upcoming} upcoming session${upcoming === 1 ? '' : 's'}.`}
+          </p>
+        </div>
+        <div className="inline-flex rounded-xl border p-1 bg-[color:var(--surface-2)]">
+          <button
+            onClick={() => setTab('seeker')}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
+              tab === 'seeker'
+                ? 'bg-[color:var(--surface)] shadow-sm'
+                : 'text-[color:var(--muted)]'
+            }`}
+          >
+            As Seeker ({asSeeker.length})
+          </button>
+          <button
+            onClick={() => setTab('mentor')}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
+              tab === 'mentor'
+                ? 'bg-[color:var(--surface)] shadow-sm'
+                : 'text-[color:var(--muted)]'
+            }`}
+          >
+            As Advisor ({asMentor.length})
+          </button>
+        </div>
       </div>
-      {current.length === 0 ? (
-        <p className="text-gray-600">No bookings yet.</p>
-      ) : (
-        <ul className="space-y-3">
-          {current.map((b) => {
-            const other =
-              tab === 'seeker' ? b.mentor?.full_name : b.seeker?.full_name
-            const when = new Date(b.scheduled_at).toLocaleString()
-            const isPast = new Date(b.scheduled_at) < new Date()
-            const hasReview = reviewed.has(b.id)
-            return (
-              <li key={b.id} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start flex-wrap gap-2">
-                  <div className="flex-1">
-                    <p className="font-semibold">{other ?? 'Unknown'}</p>
-                    <p className="text-sm text-gray-600">{when}</p>
-                    <p className="text-xs mt-1">
-                      Status: <span className="font-medium">{b.status}</span>
-                    </p>
-                    {b.notes && (
-                      <p className="text-sm mt-2 text-gray-700">{b.notes}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    <Link
-                      href={`/messages/${
-                        tab === 'seeker' ? b.mentor_id : b.seeker_id
-                      }`}
-                      className="border px-3 py-1 rounded text-sm"
-                    >
-                      Message
-                    </Link>
-                    {b.status === 'confirmed' && (
-                      <>
-                        <Link
-                          href={`/call/${b.id}`}
-                          className="bg-black text-white px-3 py-1 rounded text-sm"
-                        >
-                          Join call
-                        </Link>
-                        <button
-                          onClick={() =>
-                            downloadIcs({
-                              id: b.id,
-                              title: `MentorHub: ${other ?? 'Session'}`,
-                              description: b.notes ?? '',
-                              startISO: b.scheduled_at,
-                              durationMin: 30,
-                              url:
-                                typeof window !== 'undefined'
-                                  ? `${window.location.origin}/call/${b.id}`
-                                  : undefined,
-                            })
-                          }
-                          className="border px-3 py-1 rounded text-sm"
-                        >
-                          Add to calendar
-                        </button>
-                        {tab === 'mentor' && isPast && (
-                          <button
-                            onClick={() => complete(b.id)}
-                            className="border px-3 py-1 rounded text-sm"
-                          >
-                            Mark completed
-                          </button>
+
+      <div className="mt-6">
+        {current.length === 0 ? (
+          <Empty
+            icon="📅"
+            title={
+              tab === 'seeker'
+                ? 'No sessions yet'
+                : 'No one has booked you yet'
+            }
+            body={
+              tab === 'seeker'
+                ? 'Browse advisors and book your first session.'
+                : 'Make sure your profile and services are set up so seekers can find you.'
+            }
+            action={
+              tab === 'seeker' ? (
+                <Link
+                  href="/mentors"
+                  className="inline-flex items-center bg-[color:var(--brand)] text-white rounded-xl px-4 py-2 text-sm font-semibold hover:brightness-110"
+                >
+                  Find an advisor
+                </Link>
+              ) : (
+                <Link
+                  href="/profile"
+                  className="inline-flex items-center border rounded-xl px-4 py-2 text-sm font-medium hover:bg-[color:var(--surface-2)]"
+                >
+                  Edit profile
+                </Link>
+              )
+            }
+          />
+        ) : (
+          <ul className="space-y-3">
+            {current.map((b) => {
+              const other =
+                tab === 'seeker' ? b.mentor?.full_name : b.seeker?.full_name
+              const otherId = tab === 'seeker' ? b.mentor_id : b.seeker_id
+              const when = new Date(b.scheduled_at).toLocaleString()
+              const isPast = new Date(b.scheduled_at) < new Date()
+              const hasReview = reviewed.has(b.id)
+              return (
+                <li key={b.id}>
+                  <Card>
+                    <div className="flex items-start gap-4 flex-wrap">
+                      <Avatar name={other ?? 'User'} id={otherId} size={48} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold">{other ?? 'Unknown'}</p>
+                          <Badge tone={STATUS_TONE[b.status] ?? 'neutral'}>
+                            {b.status}
+                          </Badge>
+                          {isPast && b.status === 'confirmed' && (
+                            <Badge tone="warn">past time</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-[color:var(--muted)] mt-0.5">
+                          🕒 {when}
+                        </p>
+                        {b.notes && (
+                          <p className="text-sm mt-2">{b.notes}</p>
                         )}
-                        <button
-                          onClick={() => cancel(b.id)}
-                          className="border px-3 py-1 rounded text-sm"
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <Link
+                          href={`/messages/${otherId}`}
+                          className="border px-3 py-1.5 rounded-xl text-sm hover:bg-[color:var(--surface-2)]"
                         >
-                          Cancel
-                        </button>
-                      </>
+                          💬 Message
+                        </Link>
+                        {b.status === 'confirmed' && (
+                          <>
+                            <Link
+                              href={`/call/${b.id}`}
+                              className="bg-[color:var(--brand)] text-white px-3 py-1.5 rounded-xl text-sm font-medium hover:brightness-110"
+                            >
+                              🎥 Join call
+                            </Link>
+                            <button
+                              onClick={() =>
+                                downloadIcs({
+                                  id: b.id,
+                                  title: `MentorHub: ${other ?? 'Session'}`,
+                                  description: b.notes ?? '',
+                                  startISO: b.scheduled_at,
+                                  durationMin: 30,
+                                  url:
+                                    typeof window !== 'undefined'
+                                      ? `${window.location.origin}/call/${b.id}`
+                                      : undefined,
+                                })
+                              }
+                              className="border px-3 py-1.5 rounded-xl text-sm hover:bg-[color:var(--surface-2)]"
+                            >
+                              📅 Add to calendar
+                            </button>
+                            {tab === 'mentor' && isPast && (
+                              <button
+                                onClick={() => complete(b.id)}
+                                className="border px-3 py-1.5 rounded-xl text-sm hover:bg-[color:var(--surface-2)]"
+                              >
+                                ✓ Mark completed
+                              </button>
+                            )}
+                            <button
+                              onClick={() => cancel(b.id)}
+                              className="border px-3 py-1.5 rounded-xl text-sm text-[color:var(--danger)] hover:bg-red-50"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        )}
+                        {b.status === 'completed' &&
+                          tab === 'seeker' &&
+                          !hasReview && (
+                            <button
+                              onClick={() =>
+                                setOpenReviewFor(
+                                  openReviewFor === b.id ? null : b.id
+                                )
+                              }
+                              className="border px-3 py-1.5 rounded-xl text-sm hover:bg-[color:var(--surface-2)]"
+                            >
+                              {openReviewFor === b.id ? 'Close' : '⭐ Leave review'}
+                            </button>
+                          )}
+                        {b.status === 'completed' && hasReview && (
+                          <Badge tone="success">Reviewed</Badge>
+                        )}
+                      </div>
+                    </div>
+                    {openReviewFor === b.id && userId && (
+                      <ReviewForm
+                        bookingId={b.id}
+                        mentorId={b.mentor_id}
+                        seekerId={userId}
+                        onDone={() => {
+                          setOpenReviewFor(null)
+                          load()
+                        }}
+                      />
                     )}
-                    {b.status === 'completed' &&
-                      tab === 'seeker' &&
-                      !hasReview && (
-                        <button
-                          onClick={() =>
-                            setOpenReviewFor(
-                              openReviewFor === b.id ? null : b.id
-                            )
-                          }
-                          className="border px-3 py-1 rounded text-sm"
-                        >
-                          {openReviewFor === b.id ? 'Close' : 'Leave review'}
-                        </button>
-                      )}
-                    {b.status === 'completed' && hasReview && (
-                      <span className="text-xs text-gray-500 self-center">
-                        Reviewed
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {openReviewFor === b.id && userId && (
-                  <ReviewForm
-                    bookingId={b.id}
-                    mentorId={b.mentor_id}
-                    seekerId={userId}
-                    onDone={() => {
-                      setOpenReviewFor(null)
-                      load()
-                    }}
-                  />
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </div>
+                  </Card>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+    </Container>
   )
 }

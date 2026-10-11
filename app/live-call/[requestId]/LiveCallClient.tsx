@@ -7,15 +7,20 @@ import { supabase } from '@/lib/supabase'
 
 const JitsiMeeting = dynamic(
   () => import('@jitsi/react-sdk').then((m) => m.JitsiMeeting),
-  { ssr: false }
+  { ssr: false, loading: () => <div className="p-8">Connecting…</div> }
 )
 
 export default function LiveCallClient() {
   const { requestId } = useParams<{ requestId: string }>()
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [room, setRoom] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     ;(async () => {
@@ -47,6 +52,7 @@ export default function LiveCallClient() {
     })()
   }, [requestId, router])
 
+  if (!mounted) return <div className="p-8">Connecting…</div>
   if (error) return <div className="p-8">{error}</div>
   if (!room) return <div className="p-8">Connecting…</div>
 

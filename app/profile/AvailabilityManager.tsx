@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Card } from '../components/ui'
 
 type Slot = {
   id: string
@@ -57,8 +58,11 @@ export default function AvailabilityManager({ mentorId }: { mentorId: string }) 
   }
 
   return (
-    <div className="mt-10 border-t pt-6">
-      <h2 className="text-xl font-semibold mb-3">My availability</h2>
+    <Card>
+      <h2 className="text-lg font-bold">My availability</h2>
+      <p className="text-sm text-[color:var(--muted)] mt-1 mb-4">
+        Discrete slots seekers can book. Delete anytime an unbooked slot.
+      </p>
       <form onSubmit={addSlot} className="flex flex-wrap gap-2 items-end">
         <div>
           <label className="block text-xs text-gray-600">Start</label>
@@ -120,6 +124,6 @@ export default function AvailabilityManager({ mentorId }: { mentorId: string }) 
           ))}
         </ul>
       )}
-    </div>
+    </Card>
   )
 }

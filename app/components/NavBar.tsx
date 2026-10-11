@@ -4,25 +4,44 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { Avatar } from './ui'
 
 const LAST_SEEN_KEY = 'mh:lastMessagesSeenAt'
+
+type Me = { id: string; name: string | null; role: string | null }
 
 export default function NavBar() {
   const router = useRouter()
   const pathname = usePathname()
-  const [userId, setUserId] = useState<string | null>(null)
+  const [me, setMe] = useState<Me | null>(null)
   const [unread, setUnread] = useState(0)
+  const [open, setOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
+  // Auth state
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
+    async function load(uid: string | null) {
+      if (!uid) {
+        setMe(null)
+        return
+      }
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name, role')
+        .eq('id', uid)
+        .single()
+      setMe({ id: uid, name: data?.full_name ?? null, role: data?.role ?? null })
+    }
+    supabase.auth.getUser().then(({ data }) => load(data.user?.id ?? null))
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUserId(session?.user?.id ?? null)
+      load(session?.user?.id ?? null)
     })
     return () => sub.subscription.unsubscribe()
   }, [pathname])
 
+  // Realtime unread
   useEffect(() => {
-    if (!userId) {
+    if (!me) {
       setUnread(0)
       return
     }
@@ -36,16 +55,15 @@ export default function NavBar() {
       const { count } = await supabase
         .from('messages')
         .select('id', { count: 'exact', head: true })
-        .or(`seeker_id.eq.${userId},mentor_id.eq.${userId}`)
-        .neq('sender_id', userId)
+        .or(`seeker_id.eq.${me!.id},mentor_id.eq.${me!.id}`)
+        .neq('sender_id', me!.id)
         .gt('created_at', since)
       setUnread(count ?? 0)
     }
-
     refresh()
 
     channel = supabase
-      .channel(`nav-unread-${userId}-${crypto.randomUUID()}`)
+      .channel(`nav-unread-${me.id}-${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
@@ -55,8 +73,8 @@ export default function NavBar() {
             mentor_id: string
             sender_id: string
           }
-          if (m.sender_id === userId) return
-          if (m.seeker_id !== userId && m.mentor_id !== userId) return
+          if (m.sender_id === me.id) return
+          if (m.seeker_id !== me.id && m.mentor_id !== me.id) return
           setUnread((n) => n + 1)
         }
       )
@@ -65,7 +83,7 @@ export default function NavBar() {
     return () => {
       if (channel) supabase.removeChannel(channel)
     }
-  }, [userId])
+  }, [me])
 
   useEffect(() => {
     if (pathname?.startsWith('/messages')) {
@@ -74,9 +92,9 @@ export default function NavBar() {
       } catch {}
       setUnread(0)
     }
+    setOpen(false)
+    setMenuOpen(false)
   }, [pathname])
-
-  const loggedIn = !!userId
 
   async function logout() {
     await supabase.auth.signOut()
@@ -84,53 +102,156 @@ export default function NavBar() {
     router.refresh()
   }
 
-  if (pathname?.startsWith('/call/')) return null
+  if (pathname?.startsWith('/call/') || pathname?.startsWith('/live-call/'))
+    return null
+
+  const loggedIn = !!me
+
+  const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
+    const active =
+      pathname === href || (href !== '/' && pathname?.startsWith(href))
+    return (
+      <Link
+        href={href}
+        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+          active
+            ? 'bg-[color:var(--brand-soft)] text-[color:var(--brand)]'
+            : 'hover:bg-[color:var(--surface-2)]'
+        }`}
+      >
+        {children}
+      </Link>
+    )
+  }
 
   return (
-    <nav className="border-b">
-      <div className="max-w-4xl mx-auto p-4 flex items-center justify-between flex-wrap gap-2">
-        <Link href="/" className="font-bold text-lg">
-          MentorHub
-        </Link>
-        <div className="flex items-center gap-3 text-sm">
-          <Link href="/mentors" className="hover:underline">
-            Advisors
+    <header className="sticky top-0 z-30 backdrop-blur-lg bg-[color:var(--background)]/80 border-b">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="h-14 flex items-center justify-between gap-3">
+          {/* Brand */}
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg grid place-items-center text-white font-bold bg-gradient-to-br from-indigo-600 to-indigo-400 shadow-sm">
+              M
+            </div>
+            <span className="font-bold tracking-tight">MentorHub</span>
           </Link>
-          {loggedIn && (
-            <Link href="/favorites" className="hover:underline">
-              Saved
-            </Link>
-          )}
-          {loggedIn ? (
-            <>
-              <Link href="/dashboard" className="hover:underline">
-                Dashboard
-              </Link>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-1">
+            <NavLink href="/mentors">Advisors</NavLink>
+            {loggedIn && <NavLink href="/favorites">Saved</NavLink>}
+            {loggedIn && (
               <Link
                 href="/messages"
-                className="hover:underline relative inline-flex items-center gap-1"
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${
+                  pathname?.startsWith('/messages')
+                    ? 'bg-[color:var(--brand-soft)] text-[color:var(--brand)]'
+                    : 'hover:bg-[color:var(--surface-2)]'
+                }`}
               >
                 Messages
                 {unread > 0 && (
-                  <span className="bg-red-600 text-white text-[10px] leading-none px-1.5 py-0.5 rounded-full">
+                  <span className="bg-[color:var(--danger)] text-white text-[10px] leading-none px-1.5 py-0.5 rounded-full">
                     {unread > 9 ? '9+' : unread}
                   </span>
                 )}
               </Link>
-              <Link href="/profile" className="hover:underline">
-                Profile
-              </Link>
-              <button onClick={logout} className="hover:underline">
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link href="/login" className="hover:underline">
-              Log in
-            </Link>
-          )}
+            )}
+            {loggedIn && <NavLink href="/dashboard">Dashboard</NavLink>}
+          </nav>
+
+          {/* Account */}
+          <div className="flex items-center gap-2">
+            {loggedIn ? (
+              <div className="relative">
+                <button
+                  onClick={() => setMenuOpen((v) => !v)}
+                  className="flex items-center gap-2 rounded-full border px-1 py-1 pr-3 hover:bg-[color:var(--surface-2)]"
+                  aria-label="Open account menu"
+                >
+                  <Avatar name={me?.name ?? 'User'} id={me?.id} size={28} />
+                  <span className="hidden sm:block text-sm max-w-[7rem] truncate">
+                    {me?.name ?? 'Account'}
+                  </span>
+                </button>
+                {menuOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-48 rounded-xl border bg-[color:var(--surface)] shadow-[var(--shadow)] overflow-hidden"
+                    onMouseLeave={() => setMenuOpen(false)}
+                  >
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-2 text-sm hover:bg-[color:var(--surface-2)]"
+                    >
+                      Profile & settings
+                    </Link>
+                    <Link
+                      href="/dashboard"
+                      className="block px-4 py-2 text-sm hover:bg-[color:var(--surface-2)] md:hidden"
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={logout}
+                      className="block w-full text-left px-4 py-2 text-sm hover:bg-[color:var(--surface-2)] text-[color:var(--danger)]"
+                    >
+                      Log out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="hidden sm:inline-flex px-3 py-2 text-sm font-medium rounded-lg hover:bg-[color:var(--surface-2)]"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/login?role=mentor"
+                  className="inline-flex px-3 py-2 text-sm font-medium rounded-lg bg-[color:var(--brand)] text-white hover:brightness-110"
+                >
+                  Get started
+                </Link>
+              </>
+            )}
+            {/* Mobile menu */}
+            <button
+              onClick={() => setOpen((v) => !v)}
+              className="md:hidden p-2 rounded-lg hover:bg-[color:var(--surface-2)]"
+              aria-label="Open menu"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="4" y1="7" x2="20" y2="7" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="17" x2="20" y2="17" />
+              </svg>
+            </button>
+          </div>
         </div>
+
+        {open && (
+          <div className="md:hidden pb-3 flex flex-col gap-1">
+            <NavLink href="/mentors">Advisors</NavLink>
+            {loggedIn && <NavLink href="/favorites">Saved</NavLink>}
+            {loggedIn && (
+              <Link
+                href="/messages"
+                className="px-3 py-2 rounded-lg text-sm font-medium hover:bg-[color:var(--surface-2)] inline-flex items-center gap-2"
+              >
+                Messages
+                {unread > 0 && (
+                  <span className="bg-[color:var(--danger)] text-white text-[10px] leading-none px-1.5 py-0.5 rounded-full">
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
+              </Link>
+            )}
+            {loggedIn && <NavLink href="/dashboard">Dashboard</NavLink>}
+          </div>
+        )}
       </div>
-    </nav>
+    </header>
   )
 }

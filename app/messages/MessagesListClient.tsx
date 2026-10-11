@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { Avatar, Container, Empty } from '../components/ui'
 
 type Row = {
   id: string
@@ -19,6 +20,7 @@ type Conv = {
   otherName: string
   lastBody: string
   lastAt: string
+  mine: boolean
 }
 
 export default function MessagesListClient() {
@@ -69,41 +71,58 @@ export default function MessagesListClient() {
           otherName: names.get(otherId) ?? 'User',
           lastBody: r.body,
           lastAt: r.created_at,
+          mine: r.sender_id === user.id,
         }))
       )
       setLoading(false)
     })()
   }, [router])
 
-  if (loading) return <div className="p-8">Loading…</div>
+  if (loading) return <Container className="py-10">Loading…</Container>
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-4">Messages</h1>
+    <Container className="py-10">
+      <h1 className="text-3xl font-bold tracking-tight">Messages</h1>
+      <p className="text-[color:var(--muted)] mt-1 mb-6">
+        Your private 1-on-1 conversations.
+      </p>
       {convs.length === 0 ? (
-        <p className="text-gray-600">
-          No messages yet. Open an advisor&apos;s profile and tap &ldquo;Message&rdquo;.
-        </p>
+        <Empty
+          icon="💬"
+          title="No conversations yet"
+          body='Open an advisor&apos;s profile and tap "Message".'
+        />
       ) : (
-        <ul className="divide-y border rounded-lg">
+        <ul className="divide-y border rounded-2xl overflow-hidden bg-[color:var(--surface)]">
           {convs.map((c) => (
             <li key={c.otherId}>
               <Link
                 href={`/messages/${c.otherId}`}
-                className="block p-4 hover:bg-gray-50"
+                className="flex items-center gap-3 p-4 hover:bg-[color:var(--surface-2)] transition"
               >
-                <div className="flex justify-between gap-4">
-                  <p className="font-semibold">{c.otherName}</p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(c.lastAt).toLocaleString()}
+                <Avatar name={c.otherName} id={c.otherId} size={44} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold truncate">{c.otherName}</p>
+                    <p className="text-xs text-[color:var(--muted)]">
+                      {new Date(c.lastAt).toLocaleString([], {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                  <p className="text-sm text-[color:var(--muted)] truncate">
+                    {c.mine && 'You: '}
+                    {c.lastBody}
                   </p>
                 </div>
-                <p className="text-sm text-gray-700 truncate">{c.lastBody}</p>
               </Link>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </Container>
   )
 }

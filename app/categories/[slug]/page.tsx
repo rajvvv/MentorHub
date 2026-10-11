@@ -1,8 +1,14 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-
-export const instant = false
+import {
+  Avatar,
+  Badge,
+  Card,
+  Container,
+  Empty,
+  Stars,
+} from '../../components/ui'
 
 type Service = {
   id: string
@@ -55,19 +61,20 @@ export default async function CategoryPage({
         .from('profiles')
         .select('id, full_name, bio, topics')
         .in('id', mentorIds),
-      supabase.from('reviews').select('mentor_id, rating').in('mentor_id', mentorIds),
+      supabase
+        .from('reviews')
+        .select('mentor_id, rating')
+        .in('mentor_id', mentorIds),
     ])
     mentorMap = new Map(((ms ?? []) as Mentor[]).map((m) => [m.id, m]))
     for (const r of (revs ?? []) as ReviewRow[]) {
       const s = stats.get(r.mentor_id) ?? { avg: 0, count: 0 }
-      const total = s.avg * s.count + r.rating
+      s.avg = (s.avg * s.count + r.rating) / (s.count + 1)
       s.count += 1
-      s.avg = total / s.count
       stats.set(r.mentor_id, s)
     }
   }
 
-  // group services by mentor
   const byMentor = new Map<string, Service[]>()
   for (const s of svList) {
     const list = byMentor.get(s.mentor_id) ?? []
@@ -76,83 +83,106 @@ export default async function CategoryPage({
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <nav className="text-sm">
-        <Link href="/" className="underline text-gray-600">
-          Home
-        </Link>{' '}
-        &rsaquo;{' '}
-        <Link href="/mentors" className="underline text-gray-600">
-          Advisors
-        </Link>
-      </nav>
-      <h1 className="text-3xl font-bold mt-2">
-        {category.icon} {category.name}
-      </h1>
-      <p className="text-gray-600 mt-1">
-        {byMentor.size} advisor{byMentor.size === 1 ? '' : 's'} ·{' '}
-        {svList.length} service{svList.length === 1 ? '' : 's'}
-      </p>
+    <>
+      <section className="brand-gradient border-b">
+        <Container size="lg" className="py-10">
+          <nav className="text-sm text-[color:var(--muted)]">
+            <Link href="/" className="hover:underline">
+              Home
+            </Link>
+            <span className="mx-1.5">›</span>
+            <Link href="/mentors" className="hover:underline">
+              Advisors
+            </Link>
+          </nav>
+          <h1 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight flex items-center gap-3">
+            <span className="w-12 h-12 rounded-xl grid place-items-center text-2xl bg-[color:var(--surface)] border">
+              {category.icon}
+            </span>
+            {category.name}
+          </h1>
+          <p className="text-[color:var(--muted)] mt-2">
+            {byMentor.size} advisor{byMentor.size === 1 ? '' : 's'} ·{' '}
+            {svList.length} service{svList.length === 1 ? '' : 's'}
+          </p>
+        </Container>
+      </section>
 
-      {byMentor.size === 0 ? (
-        <p className="mt-8 text-gray-600">
-          No one offers {category.name.toLowerCase()} services yet.
-        </p>
-      ) : (
-        <ul className="mt-6 space-y-4">
-          {Array.from(byMentor.entries()).map(([mid, servicesForMentor]) => {
-            const m = mentorMap.get(mid)
-            if (!m) return null
-            const s = stats.get(mid)
-            return (
-              <li key={mid} className="border rounded-lg p-5">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div>
-                    <Link
-                      href={`/mentors/${mid}`}
-                      className="text-lg font-semibold hover:underline"
-                    >
-                      {m.full_name}
-                    </Link>
-                    {m.bio && (
-                      <p className="text-sm text-gray-700 mt-1 line-clamp-2">
-                        {m.bio}
-                      </p>
-                    )}
-                  </div>
-                  {s && (
-                    <span className="text-sm text-gray-600">
-                      ★ {s.avg.toFixed(1)}{' '}
-                      <span className="text-xs text-gray-500">({s.count})</span>
-                    </span>
-                  )}
-                </div>
-                <ul className="mt-3 divide-y border-t">
-                  {servicesForMentor.map((sv) => (
-                    <li key={sv.id} className="py-2 text-sm">
-                      <p className="font-medium">{sv.title}</p>
-                      <p className="text-xs text-gray-600">
-                        {sv.duration_min} min · Free
-                      </p>
-                      {sv.description && (
-                        <p className="text-gray-700 mt-1 line-clamp-2">
-                          {sv.description}
-                        </p>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={`/mentors/${mid}`}
-                  className="inline-block mt-3 text-sm underline"
-                >
-                  View profile &amp; book →
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </div>
+      <Container size="lg" className="py-10">
+        {byMentor.size === 0 ? (
+          <Empty
+            icon={category.icon ?? '✨'}
+            title={`No ${category.name.toLowerCase()} services yet`}
+            body="Be the first to offer services in this category."
+            action={
+              <Link
+                href="/login?role=mentor"
+                className="inline-flex items-center bg-[color:var(--brand)] text-white rounded-xl px-4 py-2 text-sm font-semibold hover:brightness-110"
+              >
+                Become an advisor
+              </Link>
+            }
+          />
+        ) : (
+          <ul className="space-y-4">
+            {Array.from(byMentor.entries()).map(([mid, servicesForMentor]) => {
+              const m = mentorMap.get(mid)
+              if (!m) return null
+              const s = stats.get(mid)
+              return (
+                <li key={mid}>
+                  <Card hover>
+                    <div className="flex items-start gap-4 flex-wrap">
+                      <Avatar name={m.full_name} id={m.id} size={56} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            href={`/mentors/${mid}`}
+                            className="text-lg font-semibold hover:underline"
+                          >
+                            {m.full_name}
+                          </Link>
+                          {s && <Stars value={s.avg} count={s.count} />}
+                        </div>
+                        {m.bio && (
+                          <p className="text-sm text-[color:var(--muted)] mt-1 line-clamp-2">
+                            {m.bio}
+                          </p>
+                        )}
+                      </div>
+                      <Link
+                        href={`/mentors/${mid}`}
+                        className="shrink-0 inline-flex items-center bg-[color:var(--brand)] text-white rounded-xl px-4 py-2 text-sm font-semibold hover:brightness-110"
+                      >
+                        View & book
+                      </Link>
+                    </div>
+                    <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+                      {servicesForMentor.map((sv) => (
+                        <li
+                          key={sv.id}
+                          className="border rounded-xl p-3 bg-[color:var(--surface-2)]"
+                        >
+                          <p className="font-medium text-sm">{sv.title}</p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <Badge tone="neutral">{sv.duration_min} min</Badge>
+                            <Badge tone="success">Free</Badge>
+                          </div>
+                          {sv.description && (
+                            <p className="text-xs text-[color:var(--muted)] mt-1 line-clamp-2">
+                              {sv.description}
+                            </p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </Container>
+    </>
   )
 }

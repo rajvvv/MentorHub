@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import RequestCallButton from '../../components/RequestCallButton'
+import { Avatar } from '../../components/ui'
 
 type Msg = {
   id: string
@@ -40,7 +41,11 @@ export default function ThreadClient() {
 
       const [{ data: myProfile }, { data: otherProfile }] = await Promise.all([
         supabase.from('profiles').select('role').eq('id', user.id).single(),
-        supabase.from('profiles').select('full_name, role').eq('id', otherId).single(),
+        supabase
+          .from('profiles')
+          .select('full_name, role')
+          .eq('id', otherId)
+          .single(),
       ])
 
       if (!otherProfile) {
@@ -126,50 +131,62 @@ export default function ThreadClient() {
   if (error) return <div className="p-8 text-red-600">{error}</div>
 
   return (
-    <div className="max-w-2xl mx-auto p-4 flex flex-col h-[calc(100vh-56px)]">
-      <div className="flex items-center justify-between pb-3 border-b gap-3">
-        <div>
-          <Link href="/messages" className="text-sm underline">
-            ← All messages
-          </Link>
-          <h1 className="text-xl font-bold">{otherName}</h1>
+    <div className="max-w-3xl mx-auto flex flex-col h-[calc(100vh-56px)]">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 sm:px-6 py-3 border-b bg-[color:var(--surface)]">
+        <Link
+          href="/messages"
+          aria-label="Back"
+          className="w-9 h-9 rounded-full grid place-items-center hover:bg-[color:var(--surface-2)]"
+        >
+          ←
+        </Link>
+        <Avatar name={otherName} id={otherId} size={40} />
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold truncate">{otherName}</p>
+          <p className="text-xs text-[color:var(--muted)]">
+            {me?.role === 'seeker' ? 'Advisor' : 'Seeker'}
+          </p>
         </div>
         {me?.role === 'seeker' && (
           <RequestCallButton
             mentorId={otherId}
-            label="📞 Call now"
-            className="bg-green-600 text-white px-3 py-1.5 rounded text-sm"
+            label="📞 Call"
+            className="bg-[color:var(--success)] text-white px-3 py-1.5 rounded-xl text-sm font-medium hover:brightness-110"
           />
         )}
       </div>
 
+      {/* Thread */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto py-4 space-y-2"
+        className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-2 bg-[color:var(--surface-2)]"
       >
         {messages.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center">
+          <p className="text-sm text-[color:var(--muted)] text-center mt-10">
             Say hi 👋
           </p>
         ) : (
-          messages.map((m) => {
+          messages.map((m, i) => {
             const mine = me && m.sender_id === me.id
+            const prev = messages[i - 1]
+            const sameSender = prev && prev.sender_id === m.sender_id
             return (
               <div
                 key={m.id}
                 className={`flex ${mine ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
+                  className={`max-w-[80%] px-3.5 py-2 text-sm shadow-sm ${
                     mine
-                      ? 'bg-black text-white rounded-br-sm'
-                      : 'bg-gray-100 rounded-bl-sm'
-                  }`}
+                      ? 'bg-[color:var(--brand)] text-white rounded-2xl rounded-br-sm'
+                      : 'bg-[color:var(--surface)] rounded-2xl rounded-bl-sm'
+                  } ${sameSender ? 'mt-0.5' : 'mt-2'}`}
                 >
                   <p className="whitespace-pre-wrap break-words">{m.body}</p>
                   <p
-                    className={`text-[10px] mt-1 ${
-                      mine ? 'text-gray-300' : 'text-gray-500'
+                    className={`text-[10px] mt-0.5 ${
+                      mine ? 'text-indigo-100' : 'text-[color:var(--muted)]'
                     }`}
                   >
                     {new Date(m.created_at).toLocaleTimeString([], {
@@ -184,18 +201,22 @@ export default function ThreadClient() {
         )}
       </div>
 
-      <form onSubmit={send} className="flex gap-2 pt-3 border-t">
+      {/* Composer */}
+      <form
+        onSubmit={send}
+        className="flex items-center gap-2 px-4 sm:px-6 py-3 border-t bg-[color:var(--surface)]"
+      >
         <input
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Type a message…"
-          className="flex-1 border p-2 rounded"
+          className="flex-1 border rounded-full px-4 py-2.5"
           maxLength={4000}
         />
         <button
           type="submit"
           disabled={!body.trim()}
-          className="bg-black text-white px-4 rounded disabled:opacity-50"
+          className="bg-[color:var(--brand)] text-white px-5 py-2.5 rounded-full font-semibold disabled:opacity-50 hover:brightness-110"
         >
           Send
         </button>

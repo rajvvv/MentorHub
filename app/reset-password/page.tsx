@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { Container } from '../components/ui'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -24,31 +25,36 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-6 border rounded-lg">
-      <h1 className="text-2xl font-bold mb-4">Set new password</h1>
-      <p className="text-sm text-gray-600 mb-3">
-        If you landed here from an email link, your session is active — just
-        enter a new password below.
-      </p>
-      <form onSubmit={submit} className="space-y-3">
-        <input
-          type="password"
-          required
-          minLength={6}
-          placeholder="New password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border p-2 rounded"
-        />
-        {err && <p className="text-red-600 text-sm">{err}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-black text-white p-2 rounded disabled:opacity-50"
-        >
-          {loading ? '…' : 'Update password'}
-        </button>
-      </form>
-    </div>
+    <Container size="sm" className="py-16">
+      <div className="rounded-2xl border bg-[color:var(--surface)] p-8 shadow-[var(--shadow-sm)]">
+        <h1 className="text-2xl font-bold tracking-tight">Set a new password</h1>
+        <p className="text-sm text-[color:var(--muted)] mt-1">
+          If you got here from the email link, you&apos;re already signed in — just pick a new one.
+        </p>
+        <form onSubmit={submit} className="mt-6 space-y-3">
+          <input
+            type="password"
+            required
+            minLength={6}
+            placeholder="New password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border rounded-xl px-3 py-2.5"
+          />
+          {err && (
+            <p className="text-sm bg-red-50 border border-red-200 text-red-700 rounded-xl p-3">
+              {err}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[color:var(--brand)] text-white rounded-xl px-4 py-2.5 font-semibold hover:brightness-110 disabled:opacity-50"
+          >
+            {loading ? '…' : 'Update password'}
+          </button>
+        </form>
+      </div>
+    </Container>
   )
 }

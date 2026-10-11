@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { Container } from '../components/ui'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -28,30 +29,46 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-6 border rounded-lg">
-      <h1 className="text-2xl font-bold mb-4">Reset password</h1>
-      <form onSubmit={submit} className="space-y-3">
-        <input
-          type="email"
-          required
-          placeholder="Your email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border p-2 rounded"
-        />
-        {err && <p className="text-red-600 text-sm">{err}</p>}
-        {msg && <p className="text-green-700 text-sm">{msg}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-black text-white p-2 rounded disabled:opacity-50"
+    <Container size="sm" className="py-16">
+      <div className="rounded-2xl border bg-[color:var(--surface)] p-8 shadow-[var(--shadow-sm)]">
+        <h1 className="text-2xl font-bold tracking-tight">Reset password</h1>
+        <p className="text-sm text-[color:var(--muted)] mt-1">
+          We&apos;ll email you a link to set a new one.
+        </p>
+        <form onSubmit={submit} className="mt-6 space-y-3">
+          <input
+            type="email"
+            required
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border rounded-xl px-3 py-2.5"
+          />
+          {err && (
+            <p className="text-sm bg-red-50 border border-red-200 text-red-700 rounded-xl p-3">
+              {err}
+            </p>
+          )}
+          {msg && (
+            <p className="text-sm bg-green-50 border border-green-200 text-green-700 rounded-xl p-3">
+              {msg}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[color:var(--brand)] text-white rounded-xl px-4 py-2.5 font-semibold hover:brightness-110 disabled:opacity-50"
+          >
+            {loading ? '…' : 'Send reset link'}
+          </button>
+        </form>
+        <Link
+          href="/login"
+          className="mt-4 inline-block text-sm text-[color:var(--muted)] hover:underline"
         >
-          {loading ? '…' : 'Send reset link'}
-        </button>
-      </form>
-      <Link href="/login" className="mt-4 inline-block text-sm underline">
-        Back to login
-      </Link>
-    </div>
+          ← Back to login
+        </Link>
+      </div>
+    </Container>
   )
 }
