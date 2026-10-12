@@ -86,7 +86,13 @@ export default function BookingForm({
         .select('id')
       if (sErr) throw sErr
       if (!claimed || claimed.length === 0) {
-        await supabase.from('bookings').delete().eq('id', booking.id)
+        // Slot race lost: cancel the orphan booking (DELETE requires an
+        // RLS policy we don't have; UPDATE to cancelled works via the
+        // existing "update own booking" policy).
+        await supabase
+          .from('bookings')
+          .update({ status: 'cancelled' })
+          .eq('id', booking.id)
         throw new Error('That slot was just taken — pick another.')
       }
 
