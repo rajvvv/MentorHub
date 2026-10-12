@@ -28,7 +28,7 @@ export default function BookingForm({
 
   if (slots.length === 0) {
     return (
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-[color:var(--muted)]">
         No open slots right now. Message the advisor to request a time.
       </p>
     )
@@ -38,7 +38,7 @@ export default function BookingForm({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="bg-black text-white px-4 py-2 rounded text-sm"
+        className="bg-[color:var(--brand)] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:brightness-110"
       >
         Book this
       </button>
@@ -130,7 +130,7 @@ export default function BookingForm({
         <button
           type="submit"
           disabled={loading}
-          className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
+          className="bg-[color:var(--brand)] text-white px-4 py-2 rounded-xl font-semibold hover:brightness-110 disabled:opacity-50"
         >
           {loading ? 'Booking…' : 'Confirm booking'}
         </button>

@@ -74,14 +74,18 @@ function LoginForm() {
           </p>
           <ul className="mt-6 space-y-3 text-sm">
             {[
-              '🎥 Free unlimited video via Jitsi',
-              '💬 Real-time chat between sessions',
-              '📅 Smart booking with your available slots',
-              '⭐ Reviews that build real reputation',
-            ].map((t) => (
-              <li key={t} className="flex items-center gap-2">
-                <span>{t.slice(0, 2)}</span>
-                <span className="text-[color:var(--muted)]">{t.slice(3)}</span>
+              { icon: '🎥', text: 'Free unlimited video via Jitsi' },
+              { icon: '💬', text: 'Real-time chat between sessions' },
+              { icon: '📅', text: 'Smart booking with your available slots' },
+              { icon: '⭐', text: 'Reviews that build real reputation' },
+            ].map((f) => (
+              <li key={f.text} className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg grid place-items-center bg-[color:var(--surface)] border shadow-[var(--shadow-sm)]">
+                  {f.icon}
+                </span>
+                <span className="text-[color:var(--muted-strong)]">
+                  {f.text}
+                </span>
               </li>
             ))}
           </ul>

@@ -1,12 +1,15 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
+
   /* Surfaces */
   --background: #fafafa;
   --surface: #ffffff;
   --surface-2: #f5f5f7;
   --foreground: #0b0b14;
-  --muted: #6b7280;
+  --muted: #52525b;
+  --muted-strong: #3f3f46;
   --border: #e5e7eb;
 
   /* Brand — deep indigo, trustworthy and warm */
@@ -16,10 +19,15 @@
   --brand-ring: rgba(79, 70, 229, 0.3);
 
   /* Accents */
-  --accent: #f59e0b;       /* amber — ratings/CTAs */
+  --accent: #d97706;       /* amber-600 — ratings/CTAs */
   --success: #16a34a;
+  --success-soft: #dcfce7;
   --danger: #dc2626;
-  --info: #0ea5e9;
+  --danger-soft: #fee2e2;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --info: #0369a1;
+  --info-soft: #e0f2fe;
 
   /* Radius */
   --radius-sm: 6px;
@@ -33,20 +41,8 @@
   --shadow-lg: 0 20px 50px -16px rgba(16, 24, 40, 0.18);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0f;
-    --surface: #11121a;
-    --surface-2: #171822;
-    --foreground: #ededf2;
-    --muted: #9aa0ad;
-    --border: #262734;
-    --brand-soft: #1e1b4b;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.5);
-    --shadow-lg: 0 20px 50px -16px rgba(0, 0, 0, 0.6);
-  }
-}
+/* Dark mode intentionally disabled for now — design is tuned light-first.
+   Re-enable later by introducing per-element dark variants or a theme toggle. */
 
 @theme inline {
   --color-background: var(--background);
@@ -54,14 +50,20 @@
   --color-surface-2: var(--surface-2);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-muted-strong: var(--muted-strong);
   --color-border: var(--border);
   --color-brand: var(--brand);
   --color-brand-fg: var(--brand-fg);
   --color-brand-soft: var(--brand-soft);
   --color-accent: var(--accent);
   --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
   --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
   --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

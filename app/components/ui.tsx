@@ -158,12 +158,12 @@ export function Badge({
   className?: string
 }) {
   const tones: Record<BadgeTone, string> = {
-    neutral: 'bg-[color:var(--surface-2)] text-[color:var(--muted)]',
+    neutral: 'bg-[color:var(--surface-2)] text-[color:var(--muted-strong)]',
     brand: 'bg-[color:var(--brand-soft)] text-[color:var(--brand)]',
-    success: 'bg-green-50 text-green-700',
-    danger: 'bg-red-50 text-red-700',
-    warn: 'bg-amber-50 text-amber-700',
-    info: 'bg-sky-50 text-sky-700',
+    success: 'bg-[color:var(--success-soft)] text-[color:var(--success)]',
+    danger: 'bg-[color:var(--danger-soft)] text-[color:var(--danger)]',
+    warn: 'bg-[color:var(--warn-soft)] text-[color:var(--warn)]',
+    info: 'bg-[color:var(--info-soft)] text-[color:var(--info)]',
   }
   return (
     <span

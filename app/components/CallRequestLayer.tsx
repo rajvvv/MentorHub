@@ -193,7 +193,7 @@ export default function CallRequestLayer() {
                 Incoming call from {incomingName}
               </p>
               {incoming.message && (
-                <p className="text-xs text-gray-600 truncate">
+                <p className="text-xs text-[color:var(--muted)] truncate">
                   &ldquo;{incoming.message}&rdquo;
                 </p>
               )}

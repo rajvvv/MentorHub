@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Card } from '../components/ui'
+import { Badge, Card, Input, Label, Select } from '../components/ui'
 
 type Slot = {
   id: string
@@ -61,61 +61,64 @@ export default function AvailabilityManager({ mentorId }: { mentorId: string }) 
     <Card>
       <h2 className="text-lg font-bold">My availability</h2>
       <p className="text-sm text-[color:var(--muted)] mt-1 mb-4">
-        Discrete slots seekers can book. Delete anytime an unbooked slot.
+        Discrete slots seekers can book. Unbooked ones can be removed anytime.
       </p>
-      <form onSubmit={addSlot} className="flex flex-wrap gap-2 items-end">
+      <form onSubmit={addSlot} className="grid gap-3 sm:grid-cols-[1fr_120px_auto] items-end">
         <div>
-          <label className="block text-xs text-gray-600">Start</label>
-          <input
+          <Label>Start</Label>
+          <Input
             type="datetime-local"
             value={startsAt}
             onChange={(e) => setStartsAt(e.target.value)}
             required
-            className="border p-2 rounded"
           />
         </div>
         <div>
-          <label className="block text-xs text-gray-600">Minutes</label>
-          <select
+          <Label>Minutes</Label>
+          <Select
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
-            className="border p-2 rounded"
           >
             <option value={15}>15</option>
             <option value={30}>30</option>
             <option value={45}>45</option>
             <option value={60}>60</option>
             <option value={90}>90</option>
-          </select>
+          </Select>
         </div>
-        <button className="bg-black text-white px-4 py-2 rounded">
+        <button className="bg-[color:var(--brand)] text-white px-4 py-2.5 rounded-xl font-semibold hover:brightness-110">
           Add slot
         </button>
       </form>
-      {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+      {error && (
+        <p className="text-sm bg-[color:var(--danger-soft)] text-[color:var(--danger)] rounded-xl p-3 mt-3">
+          {error}
+        </p>
+      )}
       {loading ? (
-        <p className="text-sm text-gray-500 mt-4">Loading…</p>
+        <p className="text-sm text-[color:var(--muted)] mt-4">Loading…</p>
       ) : slots.length === 0 ? (
-        <p className="text-sm text-gray-500 mt-4">No slots yet.</p>
+        <p className="text-sm text-[color:var(--muted)] mt-4">No slots yet.</p>
       ) : (
         <ul className="mt-4 space-y-2">
           {slots.map((s) => (
             <li
               key={s.id}
-              className="flex justify-between items-center border rounded p-2"
+              className="flex justify-between items-center border rounded-xl px-3 py-2 bg-[color:var(--surface)]"
             >
-              <span>
-                {new Date(s.starts_at).toLocaleString()} · {s.duration_min}min
-                {s.booking_id && (
-                  <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
-                    booked
-                  </span>
-                )}
+              <span className="flex items-center gap-2 text-sm">
+                <span className="font-medium">
+                  {new Date(s.starts_at).toLocaleString()}
+                </span>
+                <span className="text-[color:var(--muted)]">
+                  · {s.duration_min} min
+                </span>
+                {s.booking_id && <Badge tone="success">booked</Badge>}
               </span>
               {!s.booking_id && (
                 <button
                   onClick={() => remove(s.id)}
-                  className="text-sm text-red-600"
+                  className="text-sm text-[color:var(--danger)] hover:underline"
                 >
                   Remove
                 </button>

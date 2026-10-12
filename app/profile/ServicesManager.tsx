@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '../components/Toast'
-import { Card } from '../components/ui'
+import { Badge, Card, Input, Select, Textarea } from '../components/ui'
 
 type Category = { slug: string; name: string; icon: string | null }
 type Service = {
@@ -114,63 +114,62 @@ export default function ServicesManager({ mentorId }: { mentorId: string }) {
         Package what you offer: a title, duration, and short pitch. Seekers book these directly.
       </p>
 
-      <form onSubmit={save} className="border rounded-lg p-4 space-y-3 bg-gray-50">
+      <form onSubmit={save} className="rounded-2xl border p-4 space-y-3 bg-[color:var(--surface-2)]">
         <h3 className="font-semibold text-sm">
           {editing ? 'Edit service' : 'New service'}
         </h3>
         <div className="grid gap-3 sm:grid-cols-2">
-          <input
+          <Input
             required
             placeholder="e.g. Resume review & feedback"
             value={draft.title}
             onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-            className="border p-2 rounded"
             maxLength={120}
           />
-          <select
+          <Select
             value={draft.category_slug}
             onChange={(e) => setDraft({ ...draft, category_slug: e.target.value })}
-            className="border p-2 rounded"
           >
             {cats.map((c) => (
               <option key={c.slug} value={c.slug}>
                 {c.icon} {c.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
-        <textarea
+        <Textarea
           rows={3}
           placeholder="What's included, who it's for, what the outcome is."
           value={draft.description ?? ''}
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-          className="w-full border p-2 rounded"
         />
-        <div className="flex items-end gap-3">
+        <div className="flex items-end gap-3 flex-wrap">
           <label className="text-sm">
-            Duration (minutes)
-            <select
+            <span className="block text-xs font-semibold tracking-wide text-[color:var(--muted)] uppercase mb-1">
+              Duration
+            </span>
+            <Select
               value={draft.duration_min}
               onChange={(e) =>
                 setDraft({ ...draft, duration_min: Number(e.target.value) })
               }
-              className="block border p-2 rounded mt-1"
+              className="w-32"
             >
               {[15, 30, 45, 60, 90, 120].map((n) => (
                 <option key={n} value={n}>
                   {n} min
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
-          <button className="bg-black text-white px-4 py-2 rounded">
+          <button className="bg-[color:var(--brand)] text-white px-4 py-2.5 rounded-xl font-semibold hover:brightness-110">
             {editing ? 'Save changes' : 'Add service'}
           </button>
           {editing && (
             <button
               type="button"
               onClick={cancel}
-              className="border px-4 py-2 rounded"
+              className="border px-4 py-2.5 rounded-xl hover:bg-[color:var(--surface-2)]"
             >
               Cancel
             </button>
@@ -179,7 +178,9 @@ export default function ServicesManager({ mentorId }: { mentorId: string }) {
       </form>
 
       {services.length === 0 ? (
-        <p className="text-sm text-gray-500 mt-4">No services yet.</p>
+        <p className="text-sm text-[color:var(--muted)] mt-4">
+          No services yet. Add one above to let seekers book you.
+        </p>
       ) : (
         <ul className="mt-4 space-y-2">
           {services.map((s) => {
@@ -187,40 +188,38 @@ export default function ServicesManager({ mentorId }: { mentorId: string }) {
             return (
               <li
                 key={s.id}
-                className="border rounded p-3 flex items-start justify-between gap-3"
+                className="border rounded-xl p-3 flex items-start justify-between gap-3 bg-[color:var(--surface)]"
               >
-                <div className="flex-1">
-                  <p className="font-semibold">
-                    {s.title}{' '}
-                    {!s.is_active && (
-                      <span className="text-xs bg-gray-200 px-2 py-0.5 rounded ml-1">
-                        hidden
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-xs text-gray-600">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold">{s.title}</p>
+                    {!s.is_active && <Badge tone="neutral">hidden</Badge>}
+                  </div>
+                  <p className="text-xs text-[color:var(--muted)] mt-0.5">
                     {cat?.icon} {cat?.name} · {s.duration_min} min
                   </p>
                   {s.description && (
-                    <p className="text-sm text-gray-700 mt-1">{s.description}</p>
+                    <p className="text-sm text-[color:var(--muted-strong)] mt-1">
+                      {s.description}
+                    </p>
                   )}
                 </div>
-                <div className="flex flex-col gap-1 shrink-0">
+                <div className="flex flex-col gap-1 shrink-0 text-sm">
                   <button
                     onClick={() => startEdit(s)}
-                    className="text-sm underline text-left"
+                    className="hover:underline text-left"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => toggle(s)}
-                    className="text-sm underline text-left"
+                    className="hover:underline text-left text-[color:var(--muted-strong)]"
                   >
                     {s.is_active ? 'Hide' : 'Unhide'}
                   </button>
                   <button
                     onClick={() => remove(s)}
-                    className="text-sm underline text-left text-red-600"
+                    className="hover:underline text-left text-[color:var(--danger)]"
                   >
                     Delete
                   </button>
