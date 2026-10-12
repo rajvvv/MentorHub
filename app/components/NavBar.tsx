@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Avatar } from './ui'
-import { Icon } from './Icon'
 
 const LAST_SEEN_KEY = 'mh:lastMessagesSeenAt'
 
@@ -151,13 +150,11 @@ export default function NavBar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="h-14 flex items-center justify-between gap-3">
           {/* Brand */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl grid place-items-center text-white font-bold bg-gradient-to-br from-indigo-600 via-indigo-500 to-indigo-400 shadow-[0_1px_2px_rgba(79,70,229,0.4),inset_0_1px_0_rgba(255,255,255,0.3)] group-hover:brightness-110 transition-all">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-              </svg>
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg grid place-items-center text-white font-bold bg-gradient-to-br from-indigo-600 to-indigo-400 shadow-sm">
+              M
             </div>
-            <span className="font-bold tracking-tight text-[15px]">MentorHub</span>
+            <span className="font-bold tracking-tight">MentorHub</span>
           </Link>
 
           {/* Desktop nav */}
@@ -247,7 +244,11 @@ export default function NavBar() {
               className="md:hidden p-2 rounded-lg hover:bg-[color:var(--surface-2)]"
               aria-label="Open menu"
             >
-              <Icon name={open ? 'close' : 'menu'} size={20} />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="4" y1="7" x2="20" y2="7" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="17" x2="20" y2="17" />
+              </svg>
             </button>
           </div>
         </div>

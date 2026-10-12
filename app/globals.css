@@ -122,73 +122,15 @@ textarea:focus-visible {
 /* Soft brand gradient for hero */
 .brand-gradient {
   background:
-    radial-gradient(1200px 600px at 15% -10%, rgba(79, 70, 229, 0.14), transparent 60%),
-    radial-gradient(900px 500px at 90% 5%, rgba(217, 119, 6, 0.08), transparent 60%),
+    radial-gradient(1200px 500px at 10% -10%, rgba(79, 70, 229, 0.18), transparent 60%),
+    radial-gradient(900px 500px at 90% 0%, rgba(245, 158, 11, 0.12), transparent 60%),
     var(--background);
-}
-
-.brand-mesh {
-  background:
-    radial-gradient(600px 400px at 20% 20%, rgba(99, 102, 241, 0.25), transparent 65%),
-    radial-gradient(600px 400px at 80% 60%, rgba(236, 72, 153, 0.18), transparent 65%),
-    radial-gradient(500px 400px at 60% 100%, rgba(245, 158, 11, 0.15), transparent 65%),
-    linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
-}
-
-/* Headline tightening */
-.text-display {
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-
-/* Gradient text, used sparingly */
-.text-gradient {
-  background: linear-gradient(135deg, #4f46e5 0%, #ec4899 50%, #f59e0b 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* Card hover glow */
-.card-hover {
-  transition: transform 180ms ease, box-shadow 220ms ease, border-color 180ms ease;
-}
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: color-mix(in oklab, var(--brand) 50%, var(--border));
 }
 
 /* Pulse-ring used on live indicators */
 @keyframes mh-ring {
   0%   { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5); }
-  70%  { box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); }
+  70%  { box-shadow: 0 0 0 10px rgba(22, 163, 74, 0); }
   100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
 }
 .ring-pulse { animation: mh-ring 1.6s infinite; }
-
-/* Blob float used on hero decoration */
-@keyframes mh-float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(14px, -18px) scale(1.03); }
-}
-.blob-float { animation: mh-float 9s ease-in-out infinite; }
-
-/* Smooth entry */
-@keyframes mh-rise {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.rise-in { animation: mh-rise 500ms ease-out both; }
-
-/* Scrollable row for horizontal advisor strip */
-.snap-row { scroll-snap-type: x mandatory; }
-.snap-row > * { scroll-snap-align: start; }
-
-/* Grid noise overlay for texture on dark panels */
-.noise {
-  position: absolute; inset: 0; pointer-events: none; opacity: 0.07;
-  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
-  mix-blend-mode: overlay;
-}
