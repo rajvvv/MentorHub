@@ -60,6 +60,7 @@ export default async function CategoryPage({
       supabase
         .from('profiles')
         .select('id, full_name, bio, topics')
+        .eq('role', 'mentor')
         .in('id', mentorIds),
       supabase
         .from('reviews')

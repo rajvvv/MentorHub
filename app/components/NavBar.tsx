@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Avatar } from './ui'
@@ -17,6 +17,27 @@ export default function NavBar() {
   const [unread, setUnread] = useState(0)
   const [open, setOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setMenuOpen(false)
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [])
 
   // Auth state
   useEffect(() => {
@@ -163,11 +184,12 @@ export default function NavBar() {
           {/* Account */}
           <div className="flex items-center gap-2">
             {loggedIn ? (
-              <div className="relative">
+              <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
                   className="flex items-center gap-2 rounded-full border px-1 py-1 pr-3 hover:bg-[color:var(--surface-2)]"
                   aria-label="Open account menu"
+                  aria-expanded={menuOpen}
                 >
                   <Avatar name={me?.name ?? 'User'} id={me?.id} size={28} />
                   <span className="hidden sm:block text-sm max-w-[7rem] truncate">
@@ -176,8 +198,8 @@ export default function NavBar() {
                 </button>
                 {menuOpen && (
                   <div
+                    role="menu"
                     className="absolute right-0 mt-2 w-48 rounded-xl border bg-[color:var(--surface)] shadow-[var(--shadow)] overflow-hidden"
-                    onMouseLeave={() => setMenuOpen(false)}
                   >
                     <Link
                       href="/profile"

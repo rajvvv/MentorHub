@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import BookingForm from './BookingForm'
 import ReviewList from './ReviewList'
 import FavoriteButton from './FavoriteButton'
+import ShareButton from './ShareButton'
 import RequestCallButton from '../../components/RequestCallButton'
 import {
   Avatar,
@@ -13,6 +14,7 @@ import {
   Empty,
   Stars,
 } from '../../components/ui'
+import { OnlineDot } from '../../components/Presence'
 
 type Slot = { id: string; starts_at: string; duration_min: number }
 type Service = {
@@ -89,21 +91,23 @@ export default async function MentorProfile({
       <section className="brand-gradient border-b">
         <Container size="lg" className="py-10 sm:py-14">
           <div className="flex items-start gap-5 flex-wrap">
-            <Avatar
-              name={mentor.full_name}
-              id={mentor.id}
-              size={96}
-              className="shadow-lg"
-            />
+            <div className="relative">
+              <Avatar
+                name={mentor.full_name}
+                id={mentor.id}
+                size={96}
+                className="shadow-lg"
+              />
+              <span className="absolute bottom-1 right-1 bg-[color:var(--surface)] rounded-full p-1 shadow-sm">
+                <OnlineDot userId={mentor.id} size={14} />
+              </span>
+            </div>
             <div className="flex-1 min-w-[260px]">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
                   {mentor.full_name}
                 </h1>
-                <Badge tone="success">
-                  <span className="w-1.5 h-1.5 bg-green-600 rounded-full ring-pulse" />
-                  Available
-                </Badge>
+                <OnlineDot userId={mentor.id} size={10} label />
               </div>
               <div className="mt-2 flex items-center flex-wrap gap-x-5 gap-y-1 text-sm text-[color:var(--muted)]">
                 {revs.length > 0 && <Stars value={avg} count={revs.length} />}
@@ -141,6 +145,7 @@ export default async function MentorProfile({
                   💬 Message
                 </Link>
                 <FavoriteButton mentorId={mentor.id} />
+                <ShareButton name={mentor.full_name} />
               </div>
             </div>
           </div>

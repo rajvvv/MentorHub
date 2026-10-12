@@ -27,6 +27,18 @@ const STATUS_TONE: Record<string, 'success' | 'brand' | 'danger' | 'neutral'> = 
   cancelled: 'danger',
 }
 
+function timeUntil(iso: string): { label: string; soon: boolean } | null {
+  const diffMs = new Date(iso).getTime() - Date.now()
+  if (diffMs <= 0) return null
+  const mins = Math.floor(diffMs / 60_000)
+  const soon = mins < 60
+  if (mins < 60) return { label: `in ${mins} min`, soon: true }
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return { label: `in ${hours}h`, soon: hours < 2 }
+  const days = Math.floor(hours / 24)
+  return { label: `in ${days} day${days === 1 ? '' : 's'}`, soon }
+}
+
 export default function DashboardClient() {
   const router = useRouter()
   const toast = useToast()
@@ -180,6 +192,8 @@ export default function DashboardClient() {
               const when = new Date(b.scheduled_at).toLocaleString()
               const isPast = new Date(b.scheduled_at) < new Date()
               const hasReview = reviewed.has(b.id)
+              const countdown =
+                b.status === 'confirmed' ? timeUntil(b.scheduled_at) : null
               return (
                 <li key={b.id}>
                   <Card>
@@ -191,6 +205,11 @@ export default function DashboardClient() {
                           <Badge tone={STATUS_TONE[b.status] ?? 'neutral'}>
                             {b.status}
                           </Badge>
+                          {countdown && (
+                            <Badge tone={countdown.soon ? 'warn' : 'neutral'}>
+                              {countdown.label}
+                            </Badge>
+                          )}
                           {isPast && b.status === 'confirmed' && (
                             <Badge tone="warn">past time</Badge>
                           )}

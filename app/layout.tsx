@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import { ToastProvider } from "./components/Toast";
+import { PresenceProvider } from "./components/Presence";
 import CallRequestLayer from "./components/CallRequestLayer";
 
 const geistSans = Geist({
@@ -31,14 +32,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
         <ToastProvider>
-          <Suspense fallback={<div className="h-14 border-b" />}>
-            <NavBar />
-          </Suspense>
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <Suspense fallback={null}>
-            <CallRequestLayer />
-          </Suspense>
+          <PresenceProvider>
+            <Suspense fallback={<div className="h-14 border-b" />}>
+              <NavBar />
+            </Suspense>
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <Suspense fallback={null}>
+              <CallRequestLayer />
+            </Suspense>
+          </PresenceProvider>
         </ToastProvider>
       </body>
     </html>

@@ -9,6 +9,7 @@ import {
   SectionTitle,
   Stars,
 } from '../components/ui'
+import { OnlineDot } from '../components/Presence'
 
 type Mentor = {
   id: string
@@ -102,7 +103,12 @@ export default async function MentorsPage({
                   <Link href={`/mentors/${m.id}`}>
                     <Card hover className="h-full">
                       <div className="flex items-start gap-3">
-                        <Avatar name={m.full_name} id={m.id} size={48} />
+                        <div className="relative">
+                          <Avatar name={m.full_name} id={m.id} size={48} />
+                          <span className="absolute -bottom-0.5 -right-0.5 bg-[color:var(--surface)] rounded-full p-0.5">
+                            <OnlineDot userId={m.id} size={10} />
+                          </span>
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold truncate">
                             {m.full_name}

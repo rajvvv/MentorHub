@@ -22,8 +22,18 @@ create table if not exists bookings (
   jitsi_room text unique not null,
   status text not null default 'confirmed' check (status in ('confirmed','completed','cancelled')),
   notes text,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  constraint bookings_different_parties check (seeker_id <> mentor_id)
 );
+
+do $$ begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'bookings_different_parties'
+  ) then
+    alter table bookings
+      add constraint bookings_different_parties check (seeker_id <> mentor_id);
+  end if;
+end $$;
 
 -- Older bookings tables were created without slot_id; add it defensively
 -- BEFORE any FK constraint references it.
@@ -98,8 +108,18 @@ create table if not exists favorites (
   seeker_id uuid not null references profiles(id) on delete cascade,
   mentor_id uuid not null references profiles(id) on delete cascade,
   created_at timestamptz default now(),
-  primary key (seeker_id, mentor_id)
+  primary key (seeker_id, mentor_id),
+  constraint favorites_different_parties check (seeker_id <> mentor_id)
 );
+
+do $$ begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'favorites_different_parties'
+  ) then
+    alter table favorites
+      add constraint favorites_different_parties check (seeker_id <> mentor_id);
+  end if;
+end $$;
 
 create table if not exists call_requests (
   id uuid primary key default gen_random_uuid(),
@@ -110,8 +130,18 @@ create table if not exists call_requests (
   jitsi_room text,
   message text,
   created_at timestamptz default now(),
-  responded_at timestamptz
+  responded_at timestamptz,
+  constraint call_requests_different_parties check (seeker_id <> mentor_id)
 );
+
+do $$ begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'call_requests_different_parties'
+  ) then
+    alter table call_requests
+      add constraint call_requests_different_parties check (seeker_id <> mentor_id);
+  end if;
+end $$;
 
 create index if not exists call_requests_mentor_pending_idx
   on call_requests (mentor_id, created_at desc) where status = 'pending';
@@ -219,7 +249,16 @@ create policy "mentor deletes own slot" on availability_slots for delete
 
 create policy "reviews readable" on reviews for select using (true);
 create policy "seeker writes own review" on reviews for insert
-  with check (seeker_id = auth.uid());
+  with check (
+    seeker_id = auth.uid()
+    and exists (
+      select 1 from bookings b
+      where b.id = booking_id
+        and b.seeker_id = auth.uid()
+        and b.mentor_id = reviews.mentor_id
+        and b.status = 'completed'
+    )
+  );
 
 create policy "view own messages" on messages for select using (
   seeker_id = auth.uid() or mentor_id = auth.uid()

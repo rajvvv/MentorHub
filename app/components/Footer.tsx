@@ -5,13 +5,8 @@ import { usePathname } from 'next/navigation'
 
 export default function Footer() {
   const pathname = usePathname()
-  if (
-    pathname?.startsWith('/call/') ||
-    pathname?.startsWith('/live-call/') ||
-    pathname?.startsWith('/messages/')
-  ) {
-    return null
-  }
+  // Footer is only shown on the public landing page.
+  if (pathname !== '/') return null
   return (
     <footer className="mt-16 border-t">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 grid gap-8 sm:grid-cols-2 md:grid-cols-4">
