@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import HeroSearch from './components/HeroSearch'
-import { Avatar, Badge, Card, Container, LinkButton, Stars } from './components/ui'
+import MentorCard from './components/MentorCard'
+import { Avatar, Container, Stars } from './components/ui'
+import { Icon } from './components/Icon'
 
 type Category = {
   slug: string
@@ -10,7 +12,7 @@ type Category = {
   sort_order: number
 }
 
-type Featured = { id: string; full_name: string; bio: string | null }
+type Mentor = { id: string; full_name: string; bio: string | null }
 type ReviewRow = { mentor_id: string; rating: number }
 
 export default async function Home() {
@@ -35,7 +37,7 @@ export default async function Home() {
     ])
 
   const categories = (cats ?? []) as Category[]
-  const mentorList = (mentors ?? []) as Featured[]
+  const mentorList = (mentors ?? []) as Mentor[]
   const stats = new Map<string, { avg: number; count: number }>()
   for (const r of (reviews ?? []) as ReviewRow[]) {
     const s = stats.get(r.mentor_id) ?? { avg: 0, count: 0 }
@@ -47,82 +49,244 @@ export default async function Home() {
     .map((m) => ({ ...m, ...(stats.get(m.id) ?? { avg: 0, count: 0 }) }))
     .sort((a, b) => b.avg - a.avg || b.count - a.count)
     .slice(0, 6)
+  const spotlight = featured[0]
 
   return (
     <div>
-      {/* HERO */}
-      <section className="brand-gradient border-b">
-        <Container size="lg" className="py-16 sm:py-24">
-          <div className="max-w-3xl">
-            <Badge tone="brand" className="mb-5">
-              <span className="w-1.5 h-1.5 bg-[color:var(--brand)] rounded-full" />
-              100% free · chat + video
-            </Badge>
-            <h1 className="text-4xl sm:text-6xl font-bold tracking-tight leading-[1.05]">
-              Talk to someone who&apos;s{' '}
-              <span className="bg-gradient-to-r from-indigo-600 to-amber-500 bg-clip-text text-transparent">
-                been there.
-              </span>
-            </h1>
-            <p className="mt-5 text-lg text-[color:var(--muted)] max-w-xl">
-              Book free 1-on-1 video sessions with advisors across careers,
-              coding, design, business, wellbeing and more. Chat anytime.
-              Hop on a call when it clicks.
-            </p>
-            <div className="mt-8 max-w-xl">
-              <HeroSearch />
+      {/* ================= HERO ================= */}
+      <section className="relative overflow-hidden brand-gradient border-b">
+        <Container size="xl" className="relative py-16 sm:py-24 lg:py-28">
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center">
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 bg-[color:var(--surface)] border rounded-full px-3 py-1 text-xs font-medium text-[color:var(--muted-strong)] shadow-[var(--shadow-sm)]">
+                <span className="w-1.5 h-1.5 bg-[color:var(--success)] rounded-full ring-pulse" />
+                Free forever · no credit card
+              </div>
+              <h1 className="text-display mt-6 text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
+                Advice from people who&apos;ve{' '}
+                <span className="text-gradient">been there.</span>
+              </h1>
+              <p className="mt-6 text-lg text-[color:var(--muted-strong)] max-w-xl leading-relaxed">
+                Book 1-on-1 video sessions with advisors across careers,
+                coding, design, business, wellbeing — and more. Chat anytime.
+                Call when you need to.
+              </p>
+              <div className="mt-8 max-w-xl">
+                <HeroSearch />
+              </div>
+              <div className="mt-8 flex items-center gap-6 text-sm">
+                <div className="flex -space-x-2">
+                  {mentorList.slice(0, 4).map((m) => (
+                    <Avatar
+                      key={m.id}
+                      name={m.full_name}
+                      id={m.id}
+                      size={32}
+                      className="ring-2 ring-[color:var(--surface)]"
+                    />
+                  ))}
+                  {(adv ?? 0) > 4 && (
+                    <div className="w-8 h-8 rounded-full border-2 border-[color:var(--surface)] bg-[color:var(--surface-2)] text-[11px] grid place-items-center font-semibold">
+                      +{(adv ?? 0) - 4}
+                    </div>
+                  )}
+                </div>
+                <p className="text-[color:var(--muted-strong)]">
+                  <strong className="text-[color:var(--foreground)]">
+                    {adv ?? 0} advisors
+                  </strong>{' '}
+                  ready to help
+                </p>
+              </div>
             </div>
-            <div className="mt-6 flex items-center gap-6 text-sm text-[color:var(--muted)]">
-              <span>
-                <strong className="text-[color:var(--foreground)]">
-                  {adv ?? 0}
-                </strong>{' '}
-                advisors
-              </span>
-              <span>
-                <strong className="text-[color:var(--foreground)]">
-                  {categories.length}
-                </strong>{' '}
-                categories
-              </span>
-              <span>
-                <strong className="text-[color:var(--foreground)]">
-                  {reviews?.length ?? 0}
-                </strong>{' '}
-                reviews
-              </span>
+
+            {/* Floating preview card */}
+            <div className="relative hidden lg:block">
+              <div
+                aria-hidden
+                className="absolute -top-10 -right-10 w-72 h-72 rounded-full blob-float opacity-80"
+                style={{
+                  background:
+                    'radial-gradient(closest-side, rgba(99,102,241,0.4), transparent 70%)',
+                }}
+              />
+              <div
+                aria-hidden
+                className="absolute bottom-10 -left-10 w-64 h-64 rounded-full blob-float opacity-80"
+                style={{
+                  background:
+                    'radial-gradient(closest-side, rgba(217,119,6,0.3), transparent 70%)',
+                  animationDelay: '2s',
+                }}
+              />
+              {spotlight && (
+                <div className="relative rise-in">
+                  {/* Primary card */}
+                  <div className="relative z-20 rounded-3xl border bg-[color:var(--surface)] shadow-[var(--shadow-lg)] p-6">
+                    <div className="flex items-start gap-4">
+                      <Avatar
+                        name={spotlight.full_name}
+                        id={spotlight.id}
+                        size={72}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-lg truncate">
+                            {spotlight.full_name}
+                          </p>
+                          <Icon
+                            name="check-circle"
+                            size={16}
+                            className="text-[color:var(--brand)]"
+                          />
+                        </div>
+                        {spotlight.count > 0 ? (
+                          <Stars
+                            value={spotlight.avg}
+                            count={spotlight.count}
+                          />
+                        ) : (
+                          <p className="text-xs text-[color:var(--muted)]">
+                            Top advisor
+                          </p>
+                        )}
+                        <p className="text-sm text-[color:var(--muted)] mt-2 line-clamp-2">
+                          {spotlight.bio ?? 'Available for calls today.'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-5 grid grid-cols-2 gap-2">
+                      <div className="rounded-xl bg-[color:var(--brand-soft)] text-[color:var(--brand)] p-3">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <Icon name="video" size={16} />
+                          Call now
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-[color:var(--surface-2)] p-3">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <Icon name="message" size={16} />
+                          Message
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Decorative overlapping card */}
+                  <div className="absolute -bottom-6 -right-6 z-10 rounded-2xl border bg-[color:var(--surface)] shadow-[var(--shadow)] p-4 w-56">
+                    <div className="flex items-center gap-2">
+                      <span className="w-8 h-8 grid place-items-center rounded-lg bg-emerald-50 text-emerald-600">
+                        <Icon name="calendar" size={16} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-xs text-[color:var(--muted)]">
+                          Today
+                        </p>
+                        <p className="text-sm font-semibold">
+                          Session at 4:00 PM
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute -top-6 -left-6 z-10 rounded-2xl border bg-[color:var(--surface)] shadow-[var(--shadow)] p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-7 h-7 grid place-items-center rounded-lg bg-amber-50 text-amber-600">
+                        <Icon name="star" size={14} />
+                      </span>
+                      <p className="text-xs font-semibold">
+                        &ldquo;Life-changing session.&rdquo;
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </Container>
       </section>
 
-      {/* CATEGORIES */}
+      {/* ================= VALUE PROPS ================= */}
+      <section className="border-b">
+        <Container size="xl" className="py-14">
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              {
+                icon: 'video' as const,
+                title: 'Free video calls',
+                body: 'Unlimited 1-on-1 video sessions powered by Jitsi. No download, no account, no cost.',
+              },
+              {
+                icon: 'message' as const,
+                title: 'Real-time chat',
+                body: 'Keep the conversation going between calls. Delivered instantly, private between you two.',
+              },
+              {
+                icon: 'shield' as const,
+                title: 'Private by design',
+                body: 'Row-level security on every table. Your messages and bookings stay between you.',
+              },
+            ].map((f) => (
+              <div
+                key={f.title}
+                className="rounded-2xl border bg-[color:var(--surface)] p-6"
+              >
+                <span className="w-11 h-11 grid place-items-center rounded-xl bg-[color:var(--brand-soft)] text-[color:var(--brand)]">
+                  <Icon name={f.icon} size={22} />
+                </span>
+                <h3 className="mt-4 font-semibold text-lg">{f.title}</h3>
+                <p className="mt-1.5 text-sm text-[color:var(--muted)] leading-relaxed">
+                  {f.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ================= CATEGORIES ================= */}
       <section>
-        <Container size="lg" className="py-14">
-          <div className="flex items-end justify-between gap-4 mb-6">
+        <Container size="xl" className="py-16">
+          <div className="flex items-end justify-between gap-4 mb-8 flex-wrap">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              <p className="text-xs font-semibold tracking-wide uppercase text-[color:var(--brand)]">
+                Explore
+              </p>
+              <h2 className="text-display mt-2 text-3xl sm:text-4xl font-bold tracking-tight">
                 Browse by category
               </h2>
-              <p className="text-[color:var(--muted)] mt-1">
+              <p className="text-[color:var(--muted)] mt-2 max-w-lg">
                 Find the right fit by what you&apos;re working on.
               </p>
             </div>
+            <Link
+              href="/mentors"
+              className="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-[color:var(--brand)] hover:gap-2 transition-all"
+            >
+              All advisors
+              <Icon name="arrow-right" size={14} />
+            </Link>
           </div>
           <ul className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-            {categories.map((c) => (
+            {categories.map((c, i) => (
               <li key={c.slug}>
                 <Link
                   href={`/categories/${c.slug}`}
-                  className="group block rounded-2xl border bg-[color:var(--surface)] p-5 hover:border-[color:var(--brand)] hover:shadow-[var(--shadow)] transition-all"
+                  className="group block rounded-2xl border bg-[color:var(--surface)] p-5 card-hover relative overflow-hidden"
                 >
-                  <div className="w-10 h-10 rounded-xl grid place-items-center text-2xl bg-[color:var(--surface-2)] group-hover:bg-[color:var(--brand-soft)] transition-colors">
-                    {c.icon}
+                  <div
+                    className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-10 group-hover:opacity-30 transition-opacity"
+                    style={{
+                      background: `conic-gradient(from ${i * 45}deg, var(--brand), transparent)`,
+                    }}
+                  />
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-xl grid place-items-center text-2xl bg-[color:var(--surface-2)] group-hover:bg-[color:var(--brand-soft)] transition-colors">
+                      {c.icon}
+                    </div>
+                    <p className="mt-3 font-semibold">{c.name}</p>
+                    <p className="mt-0.5 text-xs text-[color:var(--muted)]">
+                      Explore
+                    </p>
                   </div>
-                  <p className="mt-3 font-semibold">{c.name}</p>
-                  <p className="mt-1 text-xs text-[color:var(--muted)]">
-                    Explore →
-                  </p>
                 </Link>
               </li>
             ))}
@@ -130,53 +294,40 @@ export default async function Home() {
         </Container>
       </section>
 
-      {/* FEATURED */}
+      {/* ================= FEATURED ADVISORS ================= */}
       {featured.length > 0 && (
-        <section>
-          <Container size="lg" className="py-6">
-            <div className="flex items-end justify-between gap-4 mb-6">
+        <section className="bg-[color:var(--surface-2)] border-y">
+          <Container size="xl" className="py-16">
+            <div className="flex items-end justify-between gap-4 mb-8 flex-wrap">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                  Top advisors
-                </h2>
-                <p className="text-[color:var(--muted)] mt-1">
-                  Highly rated across the community.
+                <p className="text-xs font-semibold tracking-wide uppercase text-[color:var(--brand)]">
+                  Spotlight
                 </p>
+                <h2 className="text-display mt-2 text-3xl sm:text-4xl font-bold tracking-tight">
+                  Top advisors this week
+                </h2>
               </div>
               <Link
                 href="/mentors"
-                className="text-sm font-semibold text-[color:var(--brand)] hover:underline"
+                className="inline-flex items-center gap-1 text-sm font-semibold text-[color:var(--brand)] hover:gap-2 transition-all"
               >
-                See all →
+                See all
+                <Icon name="arrow-right" size={14} />
               </Link>
             </div>
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((m) => (
                 <li key={m.id}>
-                  <Link href={`/mentors/${m.id}`}>
-                    <Card hover className="h-full">
-                      <div className="flex items-start gap-3">
-                        <Avatar name={m.full_name} id={m.id} size={48} />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold truncate">
-                            {m.full_name}
-                          </p>
-                          {m.count > 0 ? (
-                            <Stars value={m.avg} count={m.count} />
-                          ) : (
-                            <p className="text-xs text-[color:var(--muted)]">
-                              New
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      {m.bio && (
-                        <p className="text-sm text-[color:var(--muted)] mt-3 line-clamp-3">
-                          {m.bio}
-                        </p>
-                      )}
-                    </Card>
-                  </Link>
+                  <MentorCard
+                    m={{
+                      id: m.id,
+                      full_name: m.full_name,
+                      bio: m.bio,
+                      topics: null,
+                      avg: m.avg,
+                      count: m.count,
+                    }}
+                  />
                 </li>
               ))}
             </ul>
@@ -184,79 +335,88 @@ export default async function Home() {
         </section>
       )}
 
-      {/* HOW IT WORKS */}
-      <section className="bg-[color:var(--surface-2)] border-t mt-10">
-        <Container size="lg" className="py-16">
+      {/* ================= HOW IT WORKS ================= */}
+      <section>
+        <Container size="xl" className="py-16">
           <div className="text-center max-w-xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            <p className="text-xs font-semibold tracking-wide uppercase text-[color:var(--brand)]">
+              How it works
+            </p>
+            <h2 className="text-display mt-2 text-3xl sm:text-4xl font-bold tracking-tight">
               Three steps to your first session
             </h2>
-            <p className="text-[color:var(--muted)] mt-2">
-              Simple, free, and private.
-            </p>
           </div>
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <div className="mt-12 grid gap-6 md:grid-cols-3 relative">
+            <div
+              aria-hidden
+              className="hidden md:block absolute left-[16.6%] right-[16.6%] top-[26px] h-px bg-gradient-to-r from-transparent via-[color:var(--border)] to-transparent"
+            />
             {[
-              { n: '01', t: 'Find your advisor', b: 'Browse by category or search. Read real reviews.', icon: '🔎' },
-              { n: '02', t: 'Book or message', b: 'Pick a slot in a service they offer, or chat to vibe-check.', icon: '💬' },
-              { n: '03', t: 'Meet on video', b: 'Join a free Jitsi call. No downloads. No cost.', icon: '🎥' },
-            ].map((s) => (
-              <Card key={s.n} className="h-full">
-                <div className="flex items-center gap-3">
-                  <span className="w-10 h-10 grid place-items-center text-lg rounded-xl bg-[color:var(--brand-soft)] text-[color:var(--brand)]">
-                    {s.icon}
-                  </span>
-                  <span className="text-xs font-mono text-[color:var(--muted)]">
-                    {s.n}
+              {
+                icon: 'search' as const,
+                t: 'Find your advisor',
+                b: 'Browse by category or search. See ratings and real reviews.',
+              },
+              {
+                icon: 'calendar' as const,
+                t: 'Book or message',
+                b: 'Pick a slot in a service they offer, or chat first to vibe-check.',
+              },
+              {
+                icon: 'video' as const,
+                t: 'Meet on video',
+                b: 'Join a free Jitsi call. No downloads. No cost.',
+              },
+            ].map((s, i) => (
+              <div key={i} className="text-center relative">
+                <div className="mx-auto w-14 h-14 relative">
+                  <div className="w-14 h-14 rounded-2xl grid place-items-center bg-[color:var(--surface)] border-2 border-[color:var(--brand)] text-[color:var(--brand)] shadow-[var(--shadow-sm)]">
+                    <Icon name={s.icon} size={22} strokeWidth={2.2} />
+                  </div>
+                  <span className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-[color:var(--brand)] text-white text-xs font-bold grid place-items-center shadow">
+                    {i + 1}
                   </span>
                 </div>
-                <p className="mt-4 font-semibold">{s.t}</p>
-                <p className="text-sm text-[color:var(--muted)] mt-1">{s.b}</p>
-              </Card>
+                <h3 className="mt-5 font-semibold text-lg">{s.t}</h3>
+                <p className="text-sm text-[color:var(--muted)] mt-1.5 max-w-xs mx-auto leading-relaxed">
+                  {s.b}
+                </p>
+              </div>
             ))}
           </div>
         </Container>
       </section>
 
-      {/* CTA */}
+      {/* ================= CTA ================= */}
       <section>
-        <Container size="lg" className="py-16">
-          <div className="rounded-3xl p-10 sm:p-14 bg-gradient-to-br from-indigo-600 via-indigo-500 to-indigo-400 text-white relative overflow-hidden">
-            <div className="relative z-10 max-w-xl">
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                Share what you know. Help someone else leap.
+        <Container size="xl" className="py-16">
+          <div className="relative overflow-hidden rounded-3xl brand-mesh text-white p-10 sm:p-16">
+            <div className="noise" />
+            <div className="relative max-w-2xl">
+              <h2 className="text-display text-3xl sm:text-5xl font-bold tracking-tight leading-[1.05]">
+                Share what you know.<br />
+                Help someone else leap.
               </h2>
-              <p className="mt-3 text-indigo-100">
-                Become an advisor in minutes. Set your availability. Earn
-                trust through reviews.
+              <p className="mt-5 text-indigo-100 text-lg leading-relaxed">
+                Become an advisor in minutes. Set your availability.
+                Earn trust through reviews. All free, forever.
               </p>
-              <div className="mt-6 flex gap-3 flex-wrap">
-                <LinkButton
+              <div className="mt-8 flex gap-3 flex-wrap">
+                <Link
                   href="/login?role=mentor"
-                  variant="secondary"
-                  size="lg"
-                  className="!bg-white !text-indigo-700 !border-transparent"
+                  className="inline-flex items-center gap-2 bg-white text-indigo-700 px-6 py-3.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-shadow"
                 >
                   Become an advisor
-                </LinkButton>
-                <LinkButton
+                  <Icon name="arrow-right" size={16} />
+                </Link>
+                <Link
                   href="/mentors"
-                  variant="ghost"
-                  size="lg"
-                  className="!text-white hover:!bg-white/10"
+                  className="inline-flex items-center gap-2 border border-white/30 text-white px-6 py-3.5 rounded-xl font-semibold hover:bg-white/10 transition-colors"
                 >
                   Find one first
-                </LinkButton>
+                </Link>
               </div>
             </div>
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-amber-400/30 blur-3xl"
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-10 -top-10 w-56 h-56 rounded-full bg-white/20 blur-2xl"
-            />
           </div>
         </Container>
       </section>

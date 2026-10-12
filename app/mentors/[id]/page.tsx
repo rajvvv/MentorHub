@@ -15,6 +15,7 @@ import {
   Stars,
 } from '../../components/ui'
 import { OnlineDot } from '../../components/Presence'
+import { Icon } from '../../components/Icon'
 
 type Slot = { id: string; starts_at: string; duration_min: number }
 type Service = {
@@ -88,15 +89,23 @@ export default async function MentorProfile({
   return (
     <>
       {/* HERO */}
-      <section className="brand-gradient border-b">
-        <Container size="lg" className="py-10 sm:py-14">
-          <div className="flex items-start gap-5 flex-wrap">
+      <section className="brand-gradient border-b relative overflow-hidden">
+        <Container size="lg" className="relative py-12 sm:py-16">
+          <nav className="text-sm text-[color:var(--muted)] mb-5 flex items-center gap-1.5">
+            <Link href="/" className="hover:underline">Home</Link>
+            <Icon name="arrow-right" size={12} />
+            <Link href="/mentors" className="hover:underline">Advisors</Link>
+            <Icon name="arrow-right" size={12} />
+            <span className="truncate">{mentor.full_name}</span>
+          </nav>
+          <div className="flex items-start gap-6 flex-wrap">
             <div className="relative">
               <Avatar
                 name={mentor.full_name}
                 id={mentor.id}
-                size={96}
-                className="shadow-lg"
+                size={112}
+                className="shadow-[var(--shadow-lg)]"
+                ring
               />
               <span className="absolute bottom-1 right-1 bg-[color:var(--surface)] rounded-full p-1 shadow-sm">
                 <OnlineDot userId={mentor.id} size={14} />
@@ -104,23 +113,36 @@ export default async function MentorProfile({
             </div>
             <div className="flex-1 min-w-[260px]">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                <h1 className="text-display text-4xl sm:text-5xl font-bold tracking-tight">
                   {mentor.full_name}
                 </h1>
+                {revs.length >= 5 && (
+                  <span
+                    className="inline-flex items-center gap-1 bg-[color:var(--brand-soft)] text-[color:var(--brand)] px-2 py-0.5 rounded-full text-xs font-medium"
+                    title="Verified advisor"
+                  >
+                    <Icon name="check-circle" size={13} strokeWidth={2.5} />
+                    Verified
+                  </span>
+                )}
                 <OnlineDot userId={mentor.id} size={10} label />
               </div>
-              <div className="mt-2 flex items-center flex-wrap gap-x-5 gap-y-1 text-sm text-[color:var(--muted)]">
-                {revs.length > 0 && <Stars value={avg} count={revs.length} />}
-                <span>
+              <div className="mt-3 flex items-center flex-wrap gap-x-6 gap-y-2 text-sm text-[color:var(--muted)]">
+                {revs.length > 0 && <Stars value={avg} count={revs.length} size="md" />}
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon name="users" size={14} />
                   <strong className="text-[color:var(--foreground)]">
                     {sessions ?? 0}
-                  </strong>{' '}
-                  sessions
+                  </strong>
+                  sessions completed
                 </span>
-                <span>Joined {joined}</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon name="calendar" size={14} />
+                  Joined {joined}
+                </span>
               </div>
               {mentor.bio && (
-                <p className="mt-4 text-[color:var(--foreground)] max-w-2xl">
+                <p className="mt-5 text-[color:var(--foreground)] max-w-2xl leading-relaxed">
                   {mentor.bio}
                 </p>
               )}
@@ -129,20 +151,21 @@ export default async function MentorProfile({
                   {mentor.topics.map((t: string) => (
                     <span
                       key={t}
-                      className="text-xs bg-[color:var(--surface)] border px-2.5 py-1 rounded-full"
+                      className="text-xs bg-[color:var(--surface)] border px-2.5 py-1 rounded-full font-medium"
                     >
                       {t}
                     </span>
                   ))}
                 </div>
               )}
-              <div className="mt-6 flex gap-2 flex-wrap">
+              <div className="mt-7 flex gap-2 flex-wrap">
                 <RequestCallButton mentorId={mentor.id} />
                 <Link
                   href={`/messages/${mentor.id}`}
-                  className="inline-flex items-center gap-2 border px-4 py-2 rounded-xl text-sm font-medium bg-[color:var(--surface)] hover:bg-[color:var(--surface-2)]"
+                  className="inline-flex items-center gap-2 border px-4 py-2.5 rounded-xl text-sm font-medium bg-[color:var(--surface)] hover:bg-[color:var(--surface-2)]"
                 >
-                  💬 Message
+                  <Icon name="message" size={16} />
+                  Message
                 </Link>
                 <FavoriteButton mentorId={mentor.id} />
                 <ShareButton name={mentor.full_name} />

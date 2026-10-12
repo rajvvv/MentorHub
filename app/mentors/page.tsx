@@ -1,15 +1,8 @@
-import Link from 'next/link'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import MentorFilters from './MentorFilters'
-import {
-  Avatar,
-  Card,
-  Container,
-  Empty,
-  SectionTitle,
-  Stars,
-} from '../components/ui'
-import { OnlineDot } from '../components/Presence'
+import MentorCard from '../components/MentorCard'
+import { Container, Empty } from '../components/ui'
+import { Icon } from '../components/Icon'
 
 type Mentor = {
   id: string
@@ -64,94 +57,70 @@ export default async function MentorsPage({
     const sb = stats.get(b.id) ?? { avg: 0, count: 0 }
     if (sort === 'reviewed') return sb.count - sa.count
     if (sort === 'name') return a.full_name.localeCompare(b.full_name)
-    return sb.avg - sa.avg || sb.count - sa.count // 'rated' default
+    return sb.avg - sa.avg || sb.count - sa.count
   })
 
   return (
-    <Container size="lg" className="py-10">
-      <SectionTitle
-        title="Advisors"
-        subtitle={`${list.length} available · chat and video, free`}
-      />
+    <div>
+      <section className="brand-gradient border-b">
+        <Container size="xl" className="py-10 sm:py-14">
+          <nav className="text-sm text-[color:var(--muted)] mb-3 flex items-center gap-1.5">
+            <a href="/" className="hover:underline">Home</a>
+            <Icon name="arrow-right" size={12} />
+            <span>Advisors</span>
+          </nav>
+          <h1 className="text-display text-4xl sm:text-5xl font-bold tracking-tight">
+            Find your advisor
+          </h1>
+          <p className="mt-3 text-[color:var(--muted-strong)] text-lg max-w-xl">
+            {list.length} people ready to help across chat and video.
+          </p>
+        </Container>
+      </section>
 
-      <div className="mt-6">
-        <MentorFilters
-          topics={allTopics}
-          q={q}
-          topic={topic}
-          sort={sort}
-        />
-      </div>
+      <Container size="xl" className="py-10">
+        <MentorFilters topics={allTopics} q={q} topic={topic} sort={sort} />
 
-      <div className="mt-8">
-        {sorted.length === 0 ? (
-          <Empty
-            icon="🔎"
-            title={list.length === 0 ? 'No advisors yet' : 'No matches'}
-            body={
-              list.length === 0
-                ? 'Advisors who sign up will appear here.'
-                : 'Try a different search or clear the filters.'
-            }
-          />
-        ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sorted.map((m) => {
-              const s = stats.get(m.id)
-              return (
-                <li key={m.id}>
-                  <Link href={`/mentors/${m.id}`}>
-                    <Card hover className="h-full">
-                      <div className="flex items-start gap-3">
-                        <div className="relative">
-                          <Avatar name={m.full_name} id={m.id} size={48} />
-                          <span className="absolute -bottom-0.5 -right-0.5 bg-[color:var(--surface)] rounded-full p-0.5">
-                            <OnlineDot userId={m.id} size={10} />
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold truncate">
-                            {m.full_name}
-                          </p>
-                          {s ? (
-                            <Stars value={s.avg} count={s.count} />
-                          ) : (
-                            <p className="text-xs text-[color:var(--muted)]">
-                              New advisor
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      {m.bio && (
-                        <p className="text-sm text-[color:var(--muted)] mt-3 line-clamp-3">
-                          {m.bio}
-                        </p>
-                      )}
-                      {m.topics && m.topics.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                          {m.topics.slice(0, 4).map((t) => (
-                            <span
-                              key={t}
-                              className="text-xs bg-[color:var(--surface-2)] text-[color:var(--muted)] px-2 py-0.5 rounded-full"
-                            >
-                              {t}
-                            </span>
-                          ))}
-                          {m.topics.length > 4 && (
-                            <span className="text-xs text-[color:var(--muted)]">
-                              +{m.topics.length - 4} more
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </Card>
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </div>
-    </Container>
+        <div className="mt-8">
+          {sorted.length === 0 ? (
+            <Empty
+              icon="🔎"
+              title={list.length === 0 ? 'No advisors yet' : 'No matches'}
+              body={
+                list.length === 0
+                  ? 'Advisors who sign up will appear here.'
+                  : 'Try a different search or clear the filters.'
+              }
+            />
+          ) : (
+            <>
+              <p className="text-sm text-[color:var(--muted)] mb-4">
+                Showing <strong className="text-[color:var(--foreground)]">{sorted.length}</strong>{' '}
+                of <strong className="text-[color:var(--foreground)]">{list.length}</strong> advisors
+              </p>
+              <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {sorted.map((m) => {
+                  const s = stats.get(m.id)
+                  return (
+                    <li key={m.id}>
+                      <MentorCard
+                        m={{
+                          id: m.id,
+                          full_name: m.full_name,
+                          bio: m.bio,
+                          topics: m.topics,
+                          avg: s?.avg,
+                          count: s?.count,
+                        }}
+                      />
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
+        </div>
+      </Container>
+    </div>
   )
 }

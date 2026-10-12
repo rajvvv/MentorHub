@@ -48,22 +48,35 @@ export function Avatar({
   id,
   size = 40,
   className = '',
+  ring = false,
 }: {
   name: string | null | undefined
   id?: string
   size?: number
   className?: string
+  ring?: boolean
 }) {
-  const bg = hashColor(id || name || 'u')
+  const seed = id || name || 'u'
+  // Deterministic 2-hue gradient for a polished look
+  let h = 0
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0
+  const hue1 = h % 360
+  const hue2 = (hue1 + 40) % 360
+  const bg = `linear-gradient(135deg, hsl(${hue1} 65% 52%), hsl(${hue2} 70% 46%))`
   return (
     <div
       aria-hidden
-      className={`inline-grid place-items-center rounded-full text-white font-semibold select-none ${className}`}
+      className={`inline-grid place-items-center rounded-full text-white font-semibold select-none ${
+        ring
+          ? 'ring-2 ring-[color:var(--surface)] ring-offset-2 ring-offset-[color:var(--brand-soft)]'
+          : ''
+      } ${className}`}
       style={{
         width: size,
         height: size,
         background: bg,
-        fontSize: Math.max(10, size * 0.4),
+        fontSize: Math.max(10, size * 0.38),
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15)',
       }}
     >
       {initials(name)}
@@ -86,16 +99,16 @@ const btnBase =
 function btnClasses(variant: BtnVariant, size: BtnSize) {
   const v =
     variant === 'primary'
-      ? 'bg-[color:var(--brand)] text-[color:var(--brand-fg)] hover:brightness-110'
+      ? 'bg-gradient-to-b from-indigo-600 to-indigo-700 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_1px_2px_rgba(79,70,229,0.4)] hover:from-indigo-500 hover:to-indigo-600 active:translate-y-px'
       : variant === 'danger'
         ? 'bg-[color:var(--danger)] text-white hover:brightness-110'
         : variant === 'success'
-          ? 'bg-[color:var(--success)] text-white hover:brightness-110'
+          ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_1px_2px_rgba(16,163,74,0.3)] hover:brightness-105 active:translate-y-px'
           : variant === 'ghost'
             ? 'bg-transparent hover:bg-[color:var(--surface-2)]'
-            : 'bg-[color:var(--surface)] text-[color:var(--foreground)] border border-[color:var(--border)] hover:bg-[color:var(--surface-2)]'
+            : 'bg-[color:var(--surface)] text-[color:var(--foreground)] border border-[color:var(--border)] hover:bg-[color:var(--surface-2)] hover:border-[color:var(--muted)]/30'
   const s =
-    size === 'sm' ? 'px-3 py-1.5 text-sm' : size === 'lg' ? 'px-6 py-3 text-base' : 'px-4 py-2 text-sm'
+    size === 'sm' ? 'px-3 py-1.5 text-sm' : size === 'lg' ? 'px-6 py-3.5 text-base' : 'px-4 py-2.5 text-sm'
   return `${btnBase} ${v} ${s}`
 }
 
